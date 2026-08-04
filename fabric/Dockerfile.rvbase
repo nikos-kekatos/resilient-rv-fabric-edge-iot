@@ -1,0 +1,32 @@
+# Lean base for the RV-Fabric backend: MonPoly + RTLola only (no TeSSLa/JRE,
+# which the fabric does not use). Build with the prototype dir as context so the
+# monitor code + specs are copied in:
+#   docker build -t rvhier:latest -f rv-fabric-impl/Dockerfile.rvbase hierarchical-rv-rtlola
+FROM python:3.10-slim
+WORKDIR /app
+
+# --- system deps for OCaml/opam (MonPoly) ---
+RUN apt-get update && apt-get install -y \
+    ocaml opam build-essential m4 libgmp-dev pkg-config git \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- MonPoly (opam + dune) ---
+RUN opam init --disable-sandboxing -y && opam update && \
+    eval $(opam env) && \
+    opam install -y dune menhir zarith re dune-build-info && \
+    git clone https://bitbucket.org/monpoly/monpoly.git /tmp/monpoly && \
+    cd /tmp/monpoly && eval $(opam env) && dune build && \
+    cp _build/default/src/main.exe /usr/local/bin/monpoly && \
+    cd / && rm -rf /tmp/monpoly
+ENV PATH="/root/.opam/default/bin:${PATH}"
+
+# --- RTLola (rust + cargo) ---
+RUN apt-get update && apt-get install -y curl libpcap-dev && rm -rf /var/lib/apt/lists/*
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN cargo install rtlola-cli
+
+# --- monitor code + specs (context = hierarchical-rv-rtlola/) ---
+COPY . /app
+RUN mkdir -p /shared_data
+CMD ["python3"]

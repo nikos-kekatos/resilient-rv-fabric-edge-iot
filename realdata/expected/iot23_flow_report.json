@@ -1,0 +1,55 @@
+{
+  "prefix": "iot23_flow",
+  "captures": 4,
+  "thresholds": {
+    "FANOUT": 20,
+    "FLOOD": 100,
+    "FLOOD_W": 10,
+    "BEACON": 50
+  },
+  "connections": 53612,
+  "unique_devices": 748,
+  "devices_per_gateway": {
+    "gw1": 743,
+    "gw2": 5
+  },
+  "malicious_devices_gt": 3,
+  "confusion_device_level": {
+    "TP": 3,
+    "FP": 1,
+    "TN": 744,
+    "FN": 0
+  },
+  "precision": 0.75,
+  "recall": 1.0,
+  "f1": 0.857,
+  "alerts_by_type": {
+    "port_scan": 3,
+    "c2_beacon": 1
+  },
+  "flagged_devices": {
+    "cap1-1:192.168.100.103": [
+      "port_scan"
+    ],
+    "cap20-1:192.168.100.103": [
+      "port_scan"
+    ],
+    "cap3-1:192.168.2.5": [
+      "port_scan"
+    ],
+    "cap8-1:192.168.100.113": [
+      "c2_beacon"
+    ]
+  },
+  "P3.2_coordinated_scan": {
+    "devices": 3,
+    "fires": true
+  },
+  "P3.6_cross_gateway_scan": {
+    "gateways": [
+      "gw1",
+      "gw2"
+    ],
+    "fires": true
+  }
+}

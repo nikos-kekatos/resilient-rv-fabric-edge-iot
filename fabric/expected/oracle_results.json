@@ -1,0 +1,222 @@
+{
+  "oracle_incidents": [
+    "I1_P3.2_botnet",
+    "I2_P3.6_crossgw",
+    "I3_P3.1_apt",
+    "I4_P3.3_escalation",
+    "I5_P3.4_persistent",
+    "I6_P3.5_silentnode",
+    "I7_P3.7_gwsilence"
+  ],
+  "n_oracle": 7,
+  "configs": [
+    {
+      "config": "shared_log",
+      "detected": [
+        "I4_P3.3_escalation"
+      ],
+      "n_detected": 1,
+      "n_oracle": 7,
+      "preservation_rate": 0.143,
+      "missed": [
+        "I1_P3.2_botnet",
+        "I2_P3.6_crossgw",
+        "I3_P3.1_apt",
+        "I5_P3.4_persistent",
+        "I6_P3.5_silentnode",
+        "I7_P3.7_gwsilence"
+      ],
+      "miss_tags": {
+        "I1_P3.2_botnet": "sound",
+        "I2_P3.6_crossgw": "sound",
+        "I3_P3.1_apt": "sound",
+        "I5_P3.4_persistent": "sound",
+        "I6_P3.5_silentnode": "sound",
+        "I7_P3.7_gwsilence": "sound"
+      },
+      "spurious": [],
+      "false_all_clears": [
+        "I1_P3.2_botnet",
+        "I2_P3.6_crossgw",
+        "I3_P3.1_apt",
+        "I5_P3.4_persistent",
+        "I6_P3.5_silentnode",
+        "I7_P3.7_gwsilence"
+      ],
+      "n_false_all_clears": 6,
+      "downgraded_to_unknown": [],
+      "n_downgraded": 0,
+      "notes": {
+        "overload": "evicted a1,a2 overflow (discard=old, silent)",
+        "crash": "lost e1 overflow@420 (before_persist, no outbox)",
+        "reorder": "c1 overflow@200 arrives after time_anomaly@210"
+      }
+    },
+    {
+      "config": "fabric_full",
+      "detected": [
+        "I1_P3.2_botnet",
+        "I2_P3.6_crossgw",
+        "I3_P3.1_apt",
+        "I4_P3.3_escalation",
+        "I5_P3.4_persistent",
+        "I6_P3.5_silentnode",
+        "I7_P3.7_gwsilence"
+      ],
+      "n_detected": 7,
+      "n_oracle": 7,
+      "preservation_rate": 1.0,
+      "missed": [],
+      "miss_tags": {},
+      "spurious": [],
+      "false_all_clears": [],
+      "n_false_all_clears": 0,
+      "downgraded_to_unknown": [],
+      "n_downgraded": 0,
+      "notes": {}
+    },
+    {
+      "config": "fabric_noG1",
+      "detected": [
+        "I1_P3.2_botnet",
+        "I2_P3.6_crossgw",
+        "I3_P3.1_apt",
+        "I4_P3.3_escalation",
+        "I6_P3.5_silentnode",
+        "I7_P3.7_gwsilence"
+      ],
+      "n_detected": 6,
+      "n_oracle": 7,
+      "preservation_rate": 0.857,
+      "missed": [
+        "I5_P3.4_persistent"
+      ],
+      "miss_tags": {
+        "I5_P3.4_persistent": "incomplete"
+      },
+      "spurious": [],
+      "false_all_clears": [],
+      "n_false_all_clears": 0,
+      "downgraded_to_unknown": [
+        "I5_P3.4_persistent"
+      ],
+      "n_downgraded": 1,
+      "notes": {
+        "crash": "lost e1 overflow@420 (before_persist, no outbox)"
+      }
+    },
+    {
+      "config": "fabric_noG2",
+      "detected": [
+        "I1_P3.2_botnet",
+        "I2_P3.6_crossgw",
+        "I4_P3.3_escalation",
+        "I5_P3.4_persistent",
+        "I6_P3.5_silentnode",
+        "I7_P3.7_gwsilence"
+      ],
+      "n_detected": 6,
+      "n_oracle": 7,
+      "preservation_rate": 0.857,
+      "missed": [
+        "I3_P3.1_apt"
+      ],
+      "miss_tags": {
+        "I3_P3.1_apt": "incomplete"
+      },
+      "spurious": [],
+      "false_all_clears": [],
+      "n_false_all_clears": 0,
+      "downgraded_to_unknown": [
+        "I3_P3.1_apt"
+      ],
+      "n_downgraded": 1,
+      "notes": {
+        "reorder": "c1 overflow@200 arrives after time_anomaly@210"
+      }
+    },
+    {
+      "config": "fabric_noG3",
+      "detected": [
+        "I1_P3.2_botnet",
+        "I2_P3.6_crossgw",
+        "I3_P3.1_apt",
+        "I4_P3.3_escalation",
+        "I5_P3.4_persistent"
+      ],
+      "n_detected": 5,
+      "n_oracle": 7,
+      "preservation_rate": 0.714,
+      "missed": [
+        "I6_P3.5_silentnode",
+        "I7_P3.7_gwsilence"
+      ],
+      "miss_tags": {
+        "I6_P3.5_silentnode": "sound",
+        "I7_P3.7_gwsilence": "sound"
+      },
+      "spurious": [],
+      "false_all_clears": [
+        "I6_P3.5_silentnode",
+        "I7_P3.7_gwsilence"
+      ],
+      "n_false_all_clears": 2,
+      "downgraded_to_unknown": [],
+      "n_downgraded": 0,
+      "notes": {}
+    },
+    {
+      "config": "fabric_noG4",
+      "detected": [
+        "I1_P3.2_botnet",
+        "I2_P3.6_crossgw",
+        "I3_P3.1_apt",
+        "I4_P3.3_escalation",
+        "I5_P3.4_persistent",
+        "I6_P3.5_silentnode",
+        "I7_P3.7_gwsilence"
+      ],
+      "n_detected": 7,
+      "n_oracle": 7,
+      "preservation_rate": 1.0,
+      "missed": [],
+      "miss_tags": {},
+      "spurious": [],
+      "false_all_clears": [],
+      "n_false_all_clears": 0,
+      "downgraded_to_unknown": [],
+      "n_downgraded": 0,
+      "notes": {}
+    },
+    {
+      "config": "fabric_noG5",
+      "detected": [
+        "I2_P3.6_crossgw",
+        "I3_P3.1_apt",
+        "I4_P3.3_escalation",
+        "I5_P3.4_persistent",
+        "I6_P3.5_silentnode",
+        "I7_P3.7_gwsilence"
+      ],
+      "n_detected": 6,
+      "n_oracle": 7,
+      "preservation_rate": 0.857,
+      "missed": [
+        "I1_P3.2_botnet"
+      ],
+      "miss_tags": {
+        "I1_P3.2_botnet": "incomplete"
+      },
+      "spurious": [],
+      "false_all_clears": [],
+      "n_false_all_clears": 0,
+      "downgraded_to_unknown": [
+        "I1_P3.2_botnet"
+      ],
+      "n_downgraded": 1,
+      "notes": {
+        "overload": "evicted a1,a2 overflow (discard=old, silent)"
+      }
+    }
+  ]
+}

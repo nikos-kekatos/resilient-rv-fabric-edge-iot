@@ -1,0 +1,65 @@
+# Real cross-gateway clock-skew testbed.
+#
+#   gateway1 : reference clock            (faketime "+0 x1.0")
+#   gateway2 : SKEWED / DRIFTING clock    (faketime "$FT_SPEC", set by run script)
+#
+# Both stamp gw_ts_s with time.time(); libfaketime makes gateway2's clock genuinely
+# diverge, so P3.6 (overflow on >=2 gateways within window W) is exercised under a
+# real, not synthetic, cross-gateway offset. Measure with measure_skew.py.
+#
+# This stack needs only the light node image (no MonPoly): measure_skew.py reads the
+# gw.*.verdict stream directly. Add the `backend` service from ../docker-compose.yml
+# if you also want P3.6 to fire end-to-end through the RV engine.
+#
+#   FT_SPEC="+2 x1.0"  docker compose -f docker-compose.skew.yml up --build   # +2 s fixed offset
+#   FT_SPEC="+0 x1.05" docker compose -f docker-compose.skew.yml up --build   # 5% drift (grows over time)
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports: ["1883:1883"]
+    volumes:
+      - ../mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  nats:
+    image: nats:2
+    command: ["-js", "-m", "8222"]
+    ports: ["4222:4222", "8222:8222"]
+
+  gateway1:                       # reference clock
+    build: { context: .., dockerfile: clockskew/Dockerfile.faketime }
+    command: ["faketime", "-f", "+0 x1.0",
+              "python3", "gateway.py", "--id", "gw1", "--mqtt", "mosquitto", "--nats", "nats://nats:4222"]
+    depends_on: [mosquitto, nats]
+
+  gateway2:                       # skewed / drifting clock (FT_SPEC from environment)
+    build: { context: .., dockerfile: clockskew/Dockerfile.faketime }
+    command: ["sh", "-c",
+              "faketime -f \"$FT_SPEC\" python3 gateway.py --id gw2 --mqtt mosquitto --nats nats://nats:4222"]
+    environment:
+      - FT_SPEC=${FT_SPEC:-+0 x1.0}
+    depends_on: [mosquitto, nats]
+
+  device-overflow-1:              # homed to gw1
+    build: { context: .., dockerfile: clockskew/Dockerfile.faketime }
+    command: ["python3", "device_publisher.py", "--id", "node-6-overflow", "--gw", "gw1", "--broker", "mosquitto", "--profile", "overflow"]
+    depends_on: [gateway1]
+
+  device-overflow-2:              # homed to gw2 -> P3.6 cross-gateway campaign
+    build: { context: .., dockerfile: clockskew/Dockerfile.faketime }
+    command: ["python3", "device_publisher.py", "--id", "node-16-overflow", "--gw", "gw2", "--broker", "mosquitto", "--profile", "overflow"]
+    depends_on: [gateway2]
+
+  # --- clock beacons: mirror each gateway's faketime clock for a clean eps probe ---
+  beacon-gw1:                     # reference clock (matches gateway1)
+    build: { context: .., dockerfile: clockskew/Dockerfile.faketime }
+    command: ["faketime", "-f", "+0 x1.0",
+              "python3", "clock_beacon.py", "--id", "gw1", "--nats", "nats://nats:4222"]
+    depends_on: [nats]
+
+  beacon-gw2:                     # skewed clock (matches gateway2's FT_SPEC)
+    build: { context: .., dockerfile: clockskew/Dockerfile.faketime }
+    command: ["sh", "-c",
+              "faketime -f \"$FT_SPEC\" python3 clock_beacon.py --id gw2 --nats nats://nats:4222"]
+    environment:
+      - FT_SPEC=${FT_SPEC:-+0 x1.0}
+    depends_on: [nats]

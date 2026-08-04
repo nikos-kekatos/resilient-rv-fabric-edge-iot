@@ -1,0 +1,286 @@
+% =============================================================================
+%  references.bib  --  CRITIS 2026: "A Resilient Runtime-Verification Fabric
+%  for Security Monitoring of Critical Edge-IoT Infrastructure"
+% =============================================================================
+
+% ---- Messaging substrate ----------------------------------------------------
+@techreport{mqtt,
+  title       = {{MQTT} Version 5.0},
+  author      = {{OASIS}},
+  institution = {OASIS Standard},
+  year        = {2019},
+}
+
+@article{mosquitto,
+  title   = {Mosquitto: server and client implementation of the {MQTT}
+             protocol},
+  author  = {Light, Roger A.},
+  journal = {Journal of Open Source Software},
+  volume  = {2},
+  number  = {13},
+  year    = {2017},
+}
+
+@misc{nats,
+  title        = {{NATS} and {JetStream}},
+  author       = {{Synadia / CNCF}},
+  howpublished = {\url{https://nats.io}},
+  year         = {2024},
+}
+
+% ---- Runtime verification ---------------------------------------------------
+@inproceedings{rtlola,
+  title     = {{StreamLAB}: Stream-Based Monitoring of Cyber-Physical Systems},
+  author    = {Faymonville, Peter and Finkbeiner, Bernd and Schledjewski,
+               Malte and Schwenger, Maximilian and Stenger, Marvin and
+               Tentrup, Leander and Torfah, Hazem},
+  booktitle = {Computer Aided Verification (CAV)},
+  year      = {2019},
+}
+
+@inproceedings{monpoly,
+  title     = {{MonPoly}: Monitoring Usage-Control Policies},
+  author    = {Basin, David and Klaedtke, Felix and M{\"u}ller, Samuel and
+               Z{\u{a}}linescu, Eugen},
+  booktitle = {Runtime Verification (RV)},
+  year      = {2011},
+}
+
+% ---- Hierarchical / spatial RV ----------------------------------------------
+@inproceedings{strel2017,
+  title     = {Monitoring Mobile and Spatially Distributed Cyber-Physical
+               Systems},
+  author    = {Bartocci, Ezio and Bortolussi, Luca and Loreti, Michele and
+               Nenzi, Laura},
+  booktitle = {15th ACM-IEEE Int.\ Conf.\ on Formal Methods and Models for
+               System Design (MEMOCODE)},
+  pages     = {146--155},
+  year      = {2017},
+}
+
+@inproceedings{sastl2020,
+  title     = {{SaSTL}: Spatial Aggregation Signal Temporal Logic for Runtime
+               Monitoring in Smart Cities},
+  author    = {Ma, Meiyi and Bartocci, Ezio and Lifland, Eli and Stankovic,
+               John A. and Feng, Lu},
+  booktitle = {Cyber-Physical Systems (ICCPS)},
+  year      = {2020},
+}
+
+@article{rvsurvey,
+  title   = {A brief account of runtime verification},
+  author  = {Leucker, Martin and Schallhart, Christian},
+  journal = {J.\ Log.\ Algebr.\ Program.},
+  volume  = {78},
+  number  = {5},
+  year    = {2009},
+}
+
+% ---- Cloud-native messaging -------------------------------------------------
+@inproceedings{kafka,
+  title     = {{Kafka}: a Distributed Messaging System for Log Processing},
+  author    = {Kreps, Jay and Narkhede, Neha and Rao, Jun},
+  booktitle = {NetDB},
+  year      = {2011},
+}
+
+% ---- Authors' prior work (self-citations) -----------------------------------
+% NOTE (double-blind): the two entries below are the authors' own unpublished
+% to-appear works; authors/venues are anonymised for CRITIS double-blind review.
+% RESTORE the full author and booktitle fields for the camera-ready version.
+@inproceedings{ares2026,
+  title     = {Hybrid Hierarchical Runtime Verification for Edge-{IoT}
+               Security: Combining {MonPoly} and {RTLola}},
+  author    = {{Anonymous authors}},
+  booktitle = {Workshop on practical security (venue anonymised for review)},
+  year      = {2026},
+  note      = {to appear; citation anonymised for double-blind review},
+}
+
+@inproceedings{csr2026,
+  title     = {Hierarchical Security Monitoring for Edge-{IoT}: A Formal
+               Methods Approach},
+  author    = {{Anonymous authors}},
+  booktitle = {Conference on cyber security and resilience (venue anonymised for review)},
+  year      = {2026},
+  note      = {to appear; citation anonymised for double-blind review},
+}
+
+% ---- IoT security monitoring ------------------------------------------------
+@incollection{cavalli2024iotsec,
+  title     = {{IoT} Security Monitoring Tools and Models},
+  author    = {Cavalli, Ana Rosa and Mallouli, Wissam and Montes de Oca,
+               Edgardo and Rivera, Diego},
+  booktitle = {Springer Handbook of Internet of Things},
+  year      = {2024},
+}
+
+@article{stellios2018iot,
+  title   = {A Survey of {IoT}-Enabled Cyberattacks: Assessing Attack Paths to
+             Critical Infrastructures and Services},
+  author  = {Stellios, Ioannis and Kotzanikolaou, Panayiotis and Psarakis,
+             Mihalis and Alcaraz, Cristina and Lopez, Javier},
+  journal = {IEEE Commun.\ Surveys Tuts.},
+  volume  = {20}, number = {4}, year = {2018},
+}
+
+@article{santhoshkumar2023mliot,
+  title   = {A Comprehensive Survey on Machine Learning-Based Intrusion
+             Detection Systems for the {IoT}},
+  author  = {Santhosh Kumar, S. V. N. and Selvi, M. and Kannan, A.},
+  journal = {Comput.\ Intell.\ Neurosci.}, year = {2023},
+}
+
+@article{shi2016edge,
+  title   = {Edge Computing: Vision and Challenges},
+  author  = {Shi, Weisong and Cao, Jie and Zhang, Quan and Li, Youhuizi
+             and Xu, Lanyu},
+  journal = {IEEE Internet Things J.},
+  volume  = {3}, number = {5}, year = {2016},
+}
+
+% ---- Authors' prior work: formal methods / RV / digital twins ---------------
+@inproceedings{temperekidis2022dt,
+  title     = {Towards a Digital Twin Architecture with Formal Analysis
+               Capabilities for Learning-Enabled Systems},
+  author    = {Temperekidis, Anastasios and Kekatos, Nikolaos and
+               Katsaros, Panagiotis and others},
+  booktitle = {MESAS},
+  series    = {LNCS}, volume = {13866}, pages = {163--181},
+  publisher = {Springer}, year = {2023},
+}
+
+@inproceedings{temperekidis2022fmirv,
+  title     = {Runtime Verification for {FMI}-based Co-simulation},
+  author    = {Temperekidis, Anastasios and Kekatos, Nikolaos and
+               Katsaros, Panagiotis},
+  booktitle = {Runtime Verification (RV)},
+  series    = {LNCS}, volume = {13498}, pages = {304--313},
+  publisher = {Springer}, year = {2022},
+}
+
+% --- external references added per reviewer request (real, verified) -----------
+@inproceedings{bauer2012decentralised,
+  author    = {Bauer, Andreas and Falcone, Yli\`{e}s},
+  title     = {Decentralised {LTL} Monitoring},
+  booktitle = {Formal Methods (FM)},
+  series    = {LNCS},
+  volume    = {7436},
+  pages     = {85--100},
+  year      = {2012},
+}
+
+@inproceedings{helland2007life,
+  author    = {Helland, Pat},
+  title     = {Life beyond Distributed Transactions: an Apostate's Opinion},
+  booktitle = {Conf.\ on Innovative Data Systems Research (CIDR)},
+  pages     = {132--141},
+  year      = {2007},
+}
+
+@article{taormina2018battle,
+  author  = {Taormina, Riccardo and Galelli, Stefano and Tippenhauer, Nils Ole
+             and Salomons, Elad and Ostfeld, Avi and others},
+  title   = {The Battle of the Attack Detection Algorithms: Disclosing Cyber
+             Attacks on Water Distribution Networks},
+  journal = {Journal of Water Resources Planning and Management},
+  volume  = {144},
+  number  = {8},
+  pages   = {04018048},
+  year    = {2018},
+}
+
+% --- TON_IoT dataset (real multi-device case study) ---------------------------
+@article{moustafa2021toniot,
+  author  = {Moustafa, Nour},
+  title   = {A new distributed architecture for evaluating {AI}-based security
+             systems at the edge: Network {TON\_IoT} datasets},
+  journal = {Sustainable Cities and Society},
+  volume  = {72},
+  pages   = {102994},
+  year    = {2021},
+}
+
+@article{alsaedi2020toniot,
+  author  = {Alsaedi, Abdullah and Moustafa, Nour and Tari, Zahir and Mahmood,
+             Abdun and Anwar, Adnan},
+  title   = {{TON\_IoT} Telemetry Dataset: A New Generation Dataset of {IoT} and
+             {IIoT} for Data-Driven Intrusion Detection Systems},
+  journal = {IEEE Access},
+  volume  = {8},
+  pages   = {165130--165150},
+  year    = {2020},
+}
+
+@misc{wustl2021,
+  title        = {{WUSTL-IIoT-2021}: {IIoT} cybersecurity dataset (water-supply {SCADA})},
+  author       = {{Washington University in St.\ Louis}},
+  howpublished = {\url{https://www.cse.wustl.edu/~jain/iiot2/index.html}},
+  year         = {2021},
+}
+
+@inproceedings{bonakdarpour2016decentralized,
+  author    = {Bonakdarpour, Borzoo and Fraigniaud, Pierre and Rajsbaum, Sergio
+               and Travers, Corentin},
+  title     = {Decentralized Asynchronous Crash-Resilient Runtime Verification},
+  booktitle = {27th International Conference on Concurrency Theory (CONCUR)},
+  series    = {LIPIcs},
+  volume    = {59},
+  pages     = {16:1--16:15},
+  year      = {2016},
+}
+
+@inproceedings{fraigniaud2014opinions,
+  author    = {Fraigniaud, Pierre and Rajsbaum, Sergio and Travers, Corentin},
+  title     = {On the Number of Opinions Needed for Fault-Tolerant Run-Time
+               Monitoring in Distributed Systems},
+  booktitle = {5th International Conference on Runtime Verification (RV)},
+  series    = {LNCS},
+  volume    = {8734},
+  pages     = {92--107},
+  year      = {2014},
+}
+
+@article{bauer2011rvltl,
+  author  = {Bauer, Andreas and Leucker, Martin and Schallhart, Christian},
+  title   = {Runtime Verification for {LTL} and {TLTL}},
+  journal = {ACM Transactions on Software Engineering and Methodology (TOSEM)},
+  volume  = {20},
+  number  = {4},
+  pages   = {14:1--14:64},
+  year    = {2011},
+}
+
+@article{basin2015mfotl,
+  author  = {Basin, David and Klaedtke, Felix and Marinovic, Srdjan and
+             Z{\u{a}}linescu, Eugen},
+  title   = {Monitoring Metric First-Order Temporal Properties},
+  journal = {Journal of the ACM},
+  volume  = {62},
+  number  = {2},
+  pages   = {15:1--15:45},
+  year    = {2015},
+}
+
+@inproceedings{basin2017outoforder,
+  author    = {Basin, David and Klaedtke, Felix and Z{\u{a}}linescu, Eugen},
+  title     = {Runtime Verification of Temporal Properties over Out-of-Order
+               Data Streams},
+  booktitle = {29th International Conference on Computer Aided Verification (CAV)},
+  series    = {LNCS},
+  volume    = {10426},
+  pages     = {356--376},
+  year      = {2017},
+}
+
+@incollection{bartocci2018introduction,
+  author    = {Bartocci, Ezio and Falcone, Yli{\`e}s and Francalanza, Adrian
+               and Reger, Giles},
+  title     = {Introduction to Runtime Verification},
+  booktitle = {Lectures on Runtime Verification --- Introductory and Advanced Topics},
+  series    = {LNCS},
+  volume    = {10457},
+  pages     = {1--33},
+  publisher = {Springer},
+  year      = {2018},
+}

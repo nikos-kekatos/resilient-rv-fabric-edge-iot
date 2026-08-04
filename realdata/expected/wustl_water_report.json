@@ -1,0 +1,43 @@
+{
+  "prefix": "wustl_water",
+  "flows": 1194464,
+  "unique_source_identities": 14,
+  "attacker_identities": 6,
+  "structural_attackers": 5,
+  "attack_types": {
+    "dos": 78305,
+    "reconn": 8240,
+    "comminj": 259,
+    "backdoor": 212
+  },
+  "confusion": {
+    "TP": 5,
+    "FP": 1,
+    "TN": 7,
+    "FN": 1
+  },
+  "precision": 0.833,
+  "recall_all": 0.833,
+  "recall_struct": 1.0,
+  "alerts_by_type": {
+    "port_scan": 0,
+    "ddos_flood": 5,
+    "c2_beacon": 1
+  },
+  "flagged_attackers": [
+    "192.168.0.10",
+    "192.168.0.20",
+    "20.1.249.77",
+    "209.240.235.92",
+    "49.48.134.64"
+  ],
+  "gateways_of_flagged": [
+    "gw1",
+    "gw2"
+  ],
+  "monpoly_logs": {
+    "p32": "<path>",
+    "p36": "<path>",
+    "events": 5005
+  }
+}

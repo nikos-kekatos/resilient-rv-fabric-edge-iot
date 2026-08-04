@@ -1,0 +1,64 @@
+# RV-Fabric full stack. Tier split: L1@edge, L2@gateway, L3@backend.
+#   mosquitto -> device->gateway ingest (MQTT, QoS 1)
+#   nats      -> gateway->backend delivery (JetStream, durable per-consumer cursors)
+#   gateway   -> L1 (canonicaliser) + L2 (cloud_monitor aggregation)  [Dockerfile.node]
+#   backend   -> L3 MonPoly + RTLola + P3.6 cross-gateway correlation [Dockerfile.backend, needs rvhier:latest]
+#   device    -> emulated IoT device (iot_app profiles)               [Dockerfile.node]
+#
+# TWO gateways (gw1, gw2) with DISJOINT device fleets (topic dev/<gw>/+/evt), so
+# overflow appearing on both gateways within 30s exercises P3.6 (cross-gateway
+# campaign), which the single-host prototype cannot express.
+#
+# Prereq (heavy base with the RV engines):
+#   docker build -t rvhier:latest ../../hierarchical-rv-rtlola
+# Then:
+#   docker compose up --build
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports: ["1883:1883"]
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+
+  nats:
+    image: nats:2
+    command: ["-js", "-m", "8222"]   # JetStream + monitoring (:8222 for Q3 throughput stats)
+    ports: ["4222:4222", "8222:8222"]
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      - NATS_URL=nats://nats:4222
+    depends_on: [nats]
+
+  gateway1:
+    build: { context: ., dockerfile: Dockerfile.node }
+    command: ["python3", "gateway.py", "--id", "gw1", "--mqtt", "mosquitto", "--nats", "nats://nats:4222"]
+    depends_on: [mosquitto, nats, backend]
+
+  gateway2:
+    build: { context: ., dockerfile: Dockerfile.node }
+    command: ["python3", "gateway.py", "--id", "gw2", "--mqtt", "mosquitto", "--nats", "nats://nats:4222"]
+    depends_on: [mosquitto, nats, backend]
+
+  # --- gw1 fleet ---
+  device-overflow-1:
+    build: { context: ., dockerfile: Dockerfile.node }
+    command: ["python3", "device_publisher.py", "--id", "node-6-overflow", "--gw", "gw1", "--broker", "mosquitto", "--profile", "overflow"]
+    depends_on: [gateway1]
+  device-clean:
+    build: { context: ., dockerfile: Dockerfile.node }
+    command: ["python3", "device_publisher.py", "--id", "node-1-clean", "--gw", "gw1", "--broker", "mosquitto", "--profile", "normal"]
+    depends_on: [gateway1]
+
+  # --- gw2 fleet (a SECOND overflow device homed to gw2 -> P3.6) ---
+  device-overflow-2:
+    build: { context: ., dockerfile: Dockerfile.node }
+    command: ["python3", "device_publisher.py", "--id", "node-16-overflow", "--gw", "gw2", "--broker", "mosquitto", "--profile", "overflow"]
+    depends_on: [gateway2]
+  device-spam:
+    build: { context: ., dockerfile: Dockerfile.node }
+    command: ["python3", "device_publisher.py", "--id", "node-8-spammer", "--gw", "gw2", "--broker", "mosquitto", "--profile", "spam"]
+    depends_on: [gateway2]

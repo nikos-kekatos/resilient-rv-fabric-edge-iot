@@ -1,0 +1,7 @@
+# Light image for devices and gateways: they mirror L1/L2 (and the iot_app event
+# generators) in-process, so no MonPoly/RTLola/OCaml/Rust is needed here.
+FROM python:3.10-slim
+WORKDIR /app
+RUN pip install --no-cache-dir paho-mqtt nats-py
+COPY gateway.py device_publisher.py /app/
+CMD ["python3"]

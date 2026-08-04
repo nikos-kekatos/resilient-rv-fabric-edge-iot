@@ -1,0 +1,23 @@
+# Overlay: a coordinated-attack scenario to exercise the L3 properties.
+#   3 mixed-APT devices  -> P3.1 (APT) + P3.2 (coordinated, needs >=3 devices)
+#   time-spoofer         -> time_anomaly alerts
+# Mixed devices are split ACROSS gw1/gw2, so their overflow bursts also drive
+# P3.6 (cross-gateway campaign). Combined with the base overflow/spam/clean fleets.
+# Run: docker compose -f docker-compose.yml -f docker-compose.attack.yml up
+services:
+  device-mixed-1:
+    build: { context: ., dockerfile: Dockerfile.node }
+    command: ["python3", "device_publisher.py", "--id", "node-8-mixed", "--gw", "gw1", "--broker", "mosquitto", "--profile", "mixed"]
+    depends_on: [gateway1]
+  device-mixed-2:
+    build: { context: ., dockerfile: Dockerfile.node }
+    command: ["python3", "device_publisher.py", "--id", "node-9-mixed", "--gw", "gw2", "--broker", "mosquitto", "--profile", "mixed"]
+    depends_on: [gateway2]
+  device-mixed-3:
+    build: { context: ., dockerfile: Dockerfile.node }
+    command: ["python3", "device_publisher.py", "--id", "node-10-mixed", "--gw", "gw1", "--broker", "mosquitto", "--profile", "mixed"]
+    depends_on: [gateway1]
+  device-timespoof:
+    build: { context: ., dockerfile: Dockerfile.node }
+    command: ["python3", "device_publisher.py", "--id", "node-7-timespoof", "--gw", "gw2", "--broker", "mosquitto", "--profile", "timespoof"]
+    depends_on: [gateway2]

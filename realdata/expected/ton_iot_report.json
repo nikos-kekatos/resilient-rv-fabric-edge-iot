@@ -1,0 +1,70 @@
+{
+  "prefix": "ton_iot",
+  "thresholds": {
+    "FANOUT": 20,
+    "FLOOD": 100,
+    "BEACON": 50
+  },
+  "flows": 461043,
+  "unique_devices": 11536,
+  "devices_per_gateway": {
+    "gw1": 5809,
+    "gw2": 5727
+  },
+  "attacker_devices_gt": 19,
+  "structural_attackers_gt (scan/dos/ddos/backdoor)": 11,
+  "attack_types_seen": {
+    "scanning": 20000,
+    "dos": 20000,
+    "injection": 20000,
+    "ddos": 20000,
+    "password": 20000,
+    "xss": 20000,
+    "ransomware": 20000,
+    "backdoor": 20000,
+    "mitm": 1043
+  },
+  "confusion_device_level": {
+    "TP": 9,
+    "FP": 5,
+    "TN": 11512,
+    "FN": 10
+  },
+  "precision": 0.643,
+  "recall_all_attackers": 0.474,
+  "recall_structural (scan/flood/C&C attackers)": 0.636,
+  "f1": 0.545,
+  "alerts_by_type": {
+    "ddos_flood": 10,
+    "c2_beacon": 2,
+    "port_scan": 4
+  },
+  "per_monitor_precision": {
+    "ddos_flood": {
+      "flagged": 10,
+      "attackers": 7,
+      "precision": 0.7
+    },
+    "c2_beacon": {
+      "flagged": 2,
+      "attackers": 1,
+      "precision": 0.5
+    },
+    "port_scan": {
+      "flagged": 4,
+      "attackers": 3,
+      "precision": 0.75
+    }
+  },
+  "P3.2_coordinated_scan": {
+    "devices": 4,
+    "fires": true
+  },
+  "P3.6_cross_gateway_scan": {
+    "gateways": [
+      "gw1",
+      "gw2"
+    ],
+    "fires": true
+  }
+}

@@ -1,0 +1,9 @@
+# Helper image for netem-WAN latency measurement (Q2):
+#   iproute2 provides `tc` (netem) to inject per-hop delay; paho-mqtt + nats-py
+#   run bench.py against the brokers. Needs --cap-add NET_ADMIN to apply netem.
+FROM python:3.11-slim
+RUN apt-get update && apt-get install -y --no-install-recommends iproute2 \
+    && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir paho-mqtt nats-py
+COPY bench.py /bench.py
+ENTRYPOINT ["/bin/sh","-c"]

@@ -1,0 +1,13 @@
+# Backend (L3): reuses the prototype image, which already has the MonPoly + RTLola
+# binaries, correlator_monitor.py, and the specs under /app (monpoly_specs, rtlola_specs).
+#
+# Build the base first (heavy: builds MonPoly via opam + RTLola via cargo):
+#   docker build -t rvhier:latest ../../hierarchical-rv-rtlola
+# Then `docker compose build` picks up this Dockerfile.
+FROM rvhier:latest
+RUN pip install --no-cache-dir nats-py paho-mqtt
+COPY backend_l3.py /app/backend_l3.py
+COPY crossgw_specs /app/crossgw_specs
+ENV HIER_RV_DIR=/app
+WORKDIR /app
+CMD ["python3", "backend_l3.py"]

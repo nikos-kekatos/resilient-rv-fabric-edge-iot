@@ -1,0 +1,15 @@
+# P3.6: Cross-Gateway Campaign (fabric-enabled)
+#
+# Formal Specification (MFOTL):
+#   cross_gateway_campaign(cnt, t) <-
+#     cnt := CNT g. <>[0,30] overflow_gw(g);
+#     cnt >= 2
+#
+# Semantics: overflow attacks originate from devices behind at least 2 DISTINCT
+#            gateways within 30s -> a campaign spanning gateways, not a local fault.
+#
+# This mirrors P3.2 (coordinated_attack, distinct DEVICES) but aggregates over
+# distinct GATEWAYS. It is inexpressible on the single-host shared-log prototype,
+# which sees one host and cannot attribute a verdict to its originating gateway;
+# the fabric's per-gateway verdict tagging is exactly what makes it evaluable.
+(cnt <- CNT g; ONCE[0,30] overflow_gw(g, _)) AND cnt >= 2

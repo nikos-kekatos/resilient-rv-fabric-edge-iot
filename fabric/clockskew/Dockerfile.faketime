@@ -1,0 +1,19 @@
+# Gateway/device image with libfaketime, so a gateway process sees a genuinely
+# divergent, optionally drifting wall clock at the libc/syscall level. gateway.py
+# stamps its ordering time with time.time() (gateway.py:195), which libfaketime
+# intercepts -- so the skew is real from the sidecar's point of view, not injected
+# onto recorded timestamps afterwards.
+#
+# BUILD CONTEXT must be the rv-fabric-impl dir (parent of clockskew/):
+#   docker compose -f clockskew/docker-compose.skew.yml build   (context: ..)
+FROM python:3.10-slim
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends faketime libfaketime \
+ && rm -rf /var/lib/apt/lists/*
+ENV FAKETIME_NO_CACHE=1
+
+WORKDIR /app
+RUN pip install --no-cache-dir paho-mqtt nats-py
+COPY gateway.py device_publisher.py /app/
+COPY clockskew/measure_skew.py clockskew/clock_beacon.py /app/
