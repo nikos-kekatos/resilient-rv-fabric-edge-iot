@@ -125,7 +125,7 @@ docker compose up -d mosquitto nats           # brokers only (for exp_isolation/
 
 | Paper element        | Command (in `fabric/`)                                  | Expected result |
 |----------------------|----------------------------------------------------------|-----------------|
-| **Q1** baseline (§6) | `python3 exp_baseline.py --n 7000 --rate 500` (and `--rate 3000`) | **0/7000 loss** on both shared-log and fabric at 500 & 3000 msg/s (the ~1% prior figure does not reproduce). |
+| **Q1** baseline (§6) | `docker compose up -d` then `docker compose exec bench python3 /exp/exp_baseline.py --n 7000 --rate 500` (and `--rate 3000`); natively, set `EXP_ROOT` to a directory holding `expdata/trace.jsonl` | **0/7000 loss** on both shared-log and fabric at 500 & 3000 msg/s (the ~1% prior figure does not reproduce). |
 | **Q2** latency (§6)  | `python3 bench_wan.py` + `tc qdisc add dev <if> root netem delay 5ms` | MQTT hop ≈ 3δ (17/32/60 ms at δ=5/10/20 ms); JetStream ≈ δ (7/13/23 ms); p95 < 75 ms. |
 | **Q3** throughput (§6)| `python3 bench_scale.py` ; `python3 bench_fleet.py`     | saturation ~10.7K→14K msg/s at 0 loss; fleets 250/500/1000 devices at 0 loss, ~60 ms p95. |
 | **Q5** isolation, G4 (Table 3) | `python3 exp_isolation.py --n 2000 --delay 0.02`| fast consumer **0.043 s ± 0.001** vs slow peer processed **3**; shared-cursor counterfactual 40 s → **~940× isolation**. |
@@ -158,7 +158,8 @@ python3 wustl_water_rv.py --csv wustl/wustl_iiot_2021.csv --gateways 2
 # TON_IoT (Zeek flows)
 python3 ton_iot_rv.py --csv ton_iot/Train_Test_Network.csv --gateways 2
 # Real MonPoly P3.2 (coordinated) + P3.6 (cross-gateway) on TON_IoT
-python3 ton_iot_monpoly.py
+#   (writes MonPoly .log inputs, then runs the engine from the rvhier image)
+python3 ton_iot_monpoly.py --csv ton_iot/Train_Test_Network.csv --gateways 2
 ```
 
 **Expected (as reported in §7):**

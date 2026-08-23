@@ -19,13 +19,17 @@ isolated from teardown truncation. Reported over M trials as mean +/- std.
 """
 import argparse, json, os, signal, statistics, subprocess, sys, threading, time, random
 
-sys.path.insert(0, "/exp")
+HERE = os.path.dirname(os.path.abspath(__file__))
+# EXP_ROOT is /exp inside the container image, and the script's own directory
+# when run natively; override with EXP_ROOT if the data lives elsewhere.
+EXP_ROOT = os.environ.get("EXP_ROOT", "/exp" if os.path.isdir("/exp") else HERE)
+sys.path.insert(0, EXP_ROOT)
 import device_publisher as dp
 import paho.mqtt.client as mqtt
 
-TRACE = "/exp/expdata/trace.jsonl"
-LOG = "/exp/expdata/events.log"
-CANON = "/exp/expdata/canonicaliser.py"
+TRACE = os.path.join(EXP_ROOT, "expdata", "trace.jsonl")
+LOG   = os.path.join(EXP_ROOT, "expdata", "events.log")
+CANON = os.path.join(EXP_ROOT, "canonicaliser.py")
 GENS = [dp.gen_safe_tx, dp.gen_overflow_attack, dp.gen_time_spoof_attack,
         dp.gen_stealth_overflow, dp.gen_fuzz_attack]
 
