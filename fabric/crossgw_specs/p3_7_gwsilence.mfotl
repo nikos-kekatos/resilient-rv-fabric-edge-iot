@@ -1,0 +1,16 @@
+# P3.7: gateway silence (fabric-enabled availability property)
+#
+#   P3.7(g) = (ONCE verdict(g)) AND NOT (ONCE[0,T_gw] verdict(g))
+#
+# "gateway g reported at some point in the past, and has reported nothing in the
+#  last T_gw seconds" -- i.e. a gateway that was live and has gone dark, as opposed
+#  to one that never existed.
+#
+# The left conjunct range-restricts g (MonPoly requires the negated conjunct to be
+# guarded by a positive one). T_gw = 10 s, matching GW_SILENCE_T in backend_l3.py.
+#
+# Evaluated at every timepoint: the backend-resident tick supplies timepoints even
+# when every gateway is silent, so the formula is decidable under total silence.
+# With a per-gateway tick the stream would stop and this could never fire.
+
+(ONCE verdict(g)) AND (NOT (ONCE[0,10] verdict(g)))

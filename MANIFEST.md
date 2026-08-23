@@ -31,6 +31,8 @@ run instructions.
 | `fabric/canonicaliser.py`           | L1 canonicalisation filter (used by baseline) |
 | `fabric/monpoly_specs/{signature.sig,p3_1_apt,p3_2_botnet,p3_3_escalation,p3_4_persistent}.mfotl` | MonPoly signature + the fleet formulas P3.1–P3.4 |
 | `fabric/rtlola_specs/silent_node.lola` | RTLola time-triggered silent-node specification (P3.5) |
+| `fabric/crossgw_specs/{gwsilence.sig,p3_7_gwsilence.mfotl}` | MonPoly signature + formula for gateway silence (P3.7) |
+| `realdata/episodes.py` | collapses MonPoly satisfactions into distinct episodes |
 | `fabric/crossgw_specs/{crossgw.sig,p3_6_crossgw.mfotl}` | MonPoly signature + formula for cross-gateway P3.6 |
 | `fabric/mosquitto/mosquitto.conf`   | MQTT broker config                         |
 | `fabric/Dockerfile.{backend,node,bench,rvbase}` | container images (backend `FROM rvhier:latest`) |

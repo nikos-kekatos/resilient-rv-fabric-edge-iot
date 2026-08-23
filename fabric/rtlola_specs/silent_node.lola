@@ -1,14 +1,43 @@
-input overflow: String
-input safe_tx: String
+// P3.5 -- silent node.
+//
+// "A device that was reporting has produced no verdict for T_dev seconds, while
+//  monitoring time keeps advancing."
+//
+// Two things the earlier version got wrong, both of which inverted the property:
+//   * it spawned an instance only `with overflow`, so a device was watched only
+//     after it had already attacked -- a device that simply went quiet was never
+//     instantiated, which is exactly the case P3.5 exists to catch;
+//   * it counted `safe_tx` alone, so a device streaming overflows (the opposite of
+//     silent) satisfied the trigger.
+//
+// A node is now spawned by ANY verdict it emits, and is silent when it has emitted
+// NOTHING -- benign or malicious -- for the whole window. The @Local clock is what
+// makes this decidable under total fleet silence: it advances with no input, which
+// is the tick (G3) the fabric supplies.
 
-output matches(node: String)
+input safe_tx: String
+input overflow: String
+input time_anomaly: String
+input fuzzing: String
+
+// T_dev: silence window in seconds. Matches SILENCE_NODE_T in exp_oracle.py.
+constant T_dev: Float64 := 8.0
+
+// Any verdict from a node counts as "still reporting".
+output reported(node: String)
+  spawn with safe_tx
+  eval @safe_tx        when safe_tx      == node with true
+  eval @overflow       when overflow     == node with true
+  eval @time_anomaly   when time_anomaly == node with true
+  eval @fuzzing        when fuzzing      == node with true
+
+// A node is also watched once it has emitted any non-benign verdict.
+output watched(node: String)
   spawn with overflow
-  eval @safe_tx when safe_tx == node with true
-  close @Local(0.2Hz) when true
+  eval @Local(1Hz) with true
 
 trigger(node: String)
-  spawn with overflow
-  eval @Local(0.2Hz)
-    when matches(node).aggregate(over: 5s, using: count) == 0
-    with "silent_node_anomaly: {{}}".format(node)
-  close @Local(0.2Hz) when true
+  spawn with safe_tx
+  eval @Local(1Hz)
+    when reported(node).aggregate(over: T_dev, using: count) == 0
+    with "silent_node_anomaly: {}".format(node)

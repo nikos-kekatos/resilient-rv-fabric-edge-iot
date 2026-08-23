@@ -907,9 +907,10 @@ UNSW cyber-range trace ($461$k records, $19$ of $11{,}536$ identities attacking 
 classes, stressing correlation over many identities). Per-identity detection
 (precision/recall, untuned) is $0.83/0.83$ (WUSTL) and $0.64/0.47$ (TON\_IoT); dedicated
 detectors (e.g.\ BATADAL~\cite{taormina2018battle}) score higher. Driving the \emph{real}
-MonPoly engine, the coordinated \textbf{P3.2} schema fires $2$/$11$ episodes and the
-cross-gateway \textbf{P3.6} $1$/$168$ (WUSTL/TON\_IoT), at up to three coordinated sources
-across two gateways, validating the fleet properties on labelled multi-source traffic.
+MonPoly engine, the coordinated \textbf{P3.2} schema fires $17$/$11$ episodes
+(WUSTL/TON\_IoT) and the cross-gateway \textbf{P3.6} is satisfied continuously on WUSTL and
+in $168$ episodes on TON\_IoT, at up to four coordinated sources across two gateways,
+validating the fleet properties on labelled multi-source traffic.
 Application-layer classes (injection, XSS, ransomware, MITM) need content-level
 specifications and are out of scope. These counts are \emph{episodes} (consecutive
 satisfaction timepoints collapsed), so they are distinct coordinated events rather than

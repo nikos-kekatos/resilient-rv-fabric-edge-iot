@@ -157,7 +157,11 @@ def main():
 
     # emit MonPoly logs: attack-source events (DoS/Reconn) -> overflow / overflow_gw
     ev = []
-    for d in flagged & attackers:
+    # Feed L3 from what the monitors flagged, NOT from ground truth: intersecting
+    # with `attackers` here would leak labels into the correlation stream, which a
+    # deployed fabric does not have, and would make this dataset run a different
+    # pipeline from TON_IoT (ton_iot_monpoly.py feeds `scanners` unfiltered).
+    for d in flagged:
         seen = set()
         for t in scan_ts[d] or [tt for dd in dst_times[d] for tt in dst_times[d][dd]]:
             b = t // 5
