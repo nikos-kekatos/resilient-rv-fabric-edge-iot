@@ -67,7 +67,10 @@ MONPOLY_SPECS = {
 REF_INCIDENTS = ["I6_P3.5_silentnode", "I7_P3.7_gwsilence"]
 ALL_INCIDENTS = list(MONPOLY_SPECS.keys()) + REF_INCIDENTS
 
-SILENCE_NODE_T = 8      # s of device silence (while ticks pulse) => P3.5
+SILENCE_NODE_T = 8      # s of device silence in THIS seeded workload => P3.5.
+                        # Deliberately distinct from the deployed window
+                        # (rtlola_specs/silent_node.lola, 5s): this is the
+                        # threshold for the synthetic trace built below.
 SILENCE_GW_T = 10       # s of gateway silence (while ticks pulse) => P3.7
 TRACE_END = 495         # s: everything else stays live until here
 

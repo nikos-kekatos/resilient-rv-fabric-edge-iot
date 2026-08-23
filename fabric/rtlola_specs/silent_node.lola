@@ -20,9 +20,12 @@ input overflow: String
 input time_anomaly: String
 input fuzzing: String
 
-// T_dev = 8s, the silence window. RTLola requires a literal duration in
-// aggregate(over:), so the value appears inline below rather than as a constant.
-// It matches SILENCE_NODE_T in exp_oracle.py.
+// T_dev = 5s, the deployed silence window (the value backend_l3.py runs and the
+// one the paper quotes). RTLola requires a literal duration in aggregate(over:),
+// so it appears inline below rather than as a constant. T_dev must exceed the
+// fleet's benign reporting interval, or healthy devices are flagged between
+// reports. NOTE: exp_oracle.py's SILENCE_NODE_T = 8 is a different parameter --
+// the threshold for its seeded synthetic workload, not the deployed one.
 
 // Any verdict from a node counts as "still reporting".
 output reported(node: String)
@@ -35,5 +38,5 @@ output reported(node: String)
 trigger(node: String)
   spawn with safe_tx
   eval @Local(1Hz)
-    when reported(node).aggregate(over: 8s, using: count) == 0
+    when reported(node).aggregate(over: 5s, using: count) == 0
     with "silent_node_anomaly"   // the silent node is the trigger instance, printed as #0(<node>)

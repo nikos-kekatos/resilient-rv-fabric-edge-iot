@@ -678,7 +678,7 @@ reproduce, so it is condition-specific and not where the fabric differs. It diff
 two properties the evaluated shared-log design lacks. \emph{Ordering}: on the
 same $1200$-verdict stream, device-time ordering leaves $76$ out of order under the
 time-spoof profile, the gateway sidecar $0$. \emph{Silence-liveness}: under total silence the shared log yields no events so P3.5 never
-fires, whereas the 1\,Hz tick fires it within one tick of the $\sim$5\,s deadline.
+fires, whereas the 1\,Hz tick fires it within one tick of the $5$\,s deadline.
 
 \paragraph{Per-event latency under a wide-area link (Q2).}
 We place the fabric clients behind an emulated wide-area link (Linux \texttt{netem},
