@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Crash-injection driver for the gateway->backend relay (CRITIS review, concern #1).
+"""Crash-injection driver for the gateway->backend relay.
 
 Exercises the REAL production outbox (gateway.DurableOutbox) against a REAL NATS
 JetStream, injecting a hard crash (os._exit, i.e. SIGKILL-equivalent) at each of
-the three relay stages the reviewer asked about:
+the three relay stages:
 
     before_persist  -- between MQTT receipt and WAL fsync
     after_persist   -- after WAL fsync, before the JetStream publish ack

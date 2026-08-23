@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Crash-injection & recovery experiment orchestrator (CRITIS review, concern #1).
+# Crash-injection & recovery experiment orchestrator.
 # Runs the REAL gateway.DurableOutbox against the REAL NATS JetStream, crashing the
 # relay at each of the 3 stages, then measures loss / dup-publications / dup-incidents.
 set -u

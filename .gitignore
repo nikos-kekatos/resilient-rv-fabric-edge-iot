@@ -3,3 +3,10 @@ __pycache__/
 .DS_Store
 .venv/
 out/
+
+# generated experiment outputs
+expdata/
+_oracle_work/
+realdata/*_report.json
+realdata/*_p3?.log
+__pycache__/

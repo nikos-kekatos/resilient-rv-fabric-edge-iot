@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Retention-exhaustion / T_buffer experiment (CRITIS review, evaluation issue #5).
+"""Retention-exhaustion / T_buffer experiment.
 
 The paper's G5 (flow control) "defers loss under transient overload by letting
-events queue"; the reviewer asks what happens when a backend link outage lasts
+events queue"; this measures what happens when a backend link outage lasts
 LONGER than the buffer can hold. We measure it directly.
 
 Part A -- overflow behaviour. Fill a bounded JetStream stream (max_msgs = CAP) with

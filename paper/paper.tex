@@ -1,11 +1,11 @@
 % =============================================================================
 %  CRITIS 2026 -- FULL PAPER (<= 20 pp, Springer LNCS, in proceedings)
 %  A Resilient Runtime-Verification Fabric for Security Monitoring of Critical
-%  Edge-IoT Infrastructure. Reframed from the RV-Fabric (CloudNet) draft.
+%  Edge-IoT Infrastructure.
 %
-%  DOUBLE-BLIND: no author names/affiliations, NO acknowledgement, self-citations
-%  neutralised to third person. Build: tectonic -X compile main.tex
-%  All numbers are real (measured in ../paper_cloudnet/rv-fabric-impl/).
+%  CAMERA-READY: named authors + ORCIDs, acknowledgement and disclosure of interests
+%  restored, self-citations de-anonymised. Build: tectonic main.tex
+%  All numbers are measured; see the artefact repository.
 % =============================================================================
 \documentclass[runningheads]{llncs}
 
@@ -25,6 +25,14 @@
 \pgfplotsset{compat=1.17}
 \usepackage[hidelinks]{hyperref}
 \usepackage{microtype}
+\usepackage{bbding}     % \Envelope, marking the corresponding author
+% ORCID: render each id as the official hyperlinked ORCID icon (Springer eBook style)
+\usepackage{orcidlink}
+\makeatletter
+\@ifundefined{orcidID}%
+  {\newcommand{\orcidID}[1]{\,\orcidlink{#1}}}%
+  {\renewcommand{\orcidID}[1]{\,\orcidlink{#1}}}
+\makeatother
 \emergencystretch=5em   % absorb residual overfull lines (technical terms, inline math)
 % --- reduce whitespace gaps from float placement ---
 \raggedbottom
@@ -40,9 +48,22 @@
 \title{A Resilient Runtime-Verification Fabric for Security Monitoring
        of Critical Edge-IoT Infrastructure}
 \titlerunning{A Resilient RV Fabric for Critical Edge-IoT Security Monitoring}
-\author{Anonymous Submission}
-\authorrunning{Anonymous}
-\institute{Anonymised for double-blind review}
+\author{%
+Nikolaos Kekatos\,\textsuperscript{(\Envelope)}\inst{1}\orcidID{0009-0000-2358-4270} \and
+Marinelio Chintri\inst{2}\orcidID{0009-0009-3923-1790} \and
+Panagiotis Katsaros\inst{3}\orcidID{0000-0002-4309-5295} \and
+Alexios Lekidis\inst{4}\orcidID{0000-0002-8243-7075} \and
+Tom Nianios\inst{1}\orcidID{0009-0008-2238-3555} \and
+Ioannis Seitoglou\inst{2}\orcidID{0009-0002-5807-3635} \and
+Anastasios Temperekidis\inst{1}\orcidID{0009-0005-5856-2780} \and
+Stylianos Basagiannis\inst{2}\orcidID{0000-0002-4513-0541}}
+\authorrunning{N. Kekatos et al.}
+\institute{%
+$^{1}$Clone Systems, Cyprus, \email{\{nkekatos,tnianios,atemperekidis\}@clone-systems.com}\\
+$^{2}$International Hellenic University, Greece, \email{\{basagiannis,marchint,ioaseito\}@ihu.gr}\\
+$^{3}$Aristotle University of Thessaloniki, Greece, \email{katsaros@csd.auth.gr}\\
+$^{4}$University of Thessaly, Greece, \email{alekidis@uth.gr}\\[2pt]
+\textsuperscript{(\Envelope)}\,Corresponding author.}
 \maketitle
 
 \begin{abstract}
@@ -59,17 +80,18 @@ falls silent, and one slow consumer stalls the pipeline. Each failure is
 device ingest, a durable stream broker for backend delivery) and re-establishes five
 continuity guarantees: durable delivery under post-persistence crashes, a trusted
 event order, progress under total silence, consumer isolation, and flow control under
-bounded overload, each holding as an invariant conditioned on broker durability. We
-evaluate them under controlled fault injection (crashes, clock skew, network silence,
-and overload) on a containerised testbed. Measured against a fault-free oracle using
-the real MonPoly engine and tick-driven liveness detectors, the shared-log baseline
-misses six of seven injected security incidents and reports each as an unqualified
-all-clear, whereas \sys preserves all seven; two
+bounded overload, each holding as an invariant conditioned on broker durability.
+Above the transport, \sys makes evidence completeness part of runtime-verification
+semantics: every verdict carries a status (sound, degraded, incomplete, or unavailable)
+derived from delivery gaps, retention pressure, and liveness, so an incomplete stream can
+no longer yield an unqualified all-clear. We evaluate the guarantees under controlled
+fault injection (crashes, clock skew, network silence, and overload) on a containerised
+testbed. Measured against a fault-free oracle using the real MonPoly engine and
+tick-driven liveness detectors, the shared-log baseline misses six of seven injected
+security incidents and reports each as an unqualified all-clear, whereas \sys preserves
+all seven, while removing individual mechanisms reintroduces specific classes of loss; two
 openly published critical-infrastructure datasets (water-SCADA and IoT/IIoT) further
-replay end-to-end through the real engine. Finally, \sys makes evidence completeness
-part of the verdict: each verdict carries a status (sound, degraded, incomplete, or
-unavailable) derived from delivery gaps, retention pressure, and liveness, so an
-incomplete stream can no longer yield an unqualified all-clear.
+replay end-to-end through the real engine.
 
 \keywords{Critical infrastructure protection \and Resilience \and Runtime
 verification \and IoT security \and Intrusion detection \and Situational
@@ -106,12 +128,13 @@ depend on; \emph{(iii)} time-triggered properties (``no device has reported for
 $T$ seconds'') never fire when the network goes silent, because a log
 with no new lines produces no events to advance the monitor's clock; and
 \emph{(iv)} a single shared log serialises all consumers with no flow
-control, so one slow monitor stalls the pipeline and the design does not scale
-past a handful of devices. These failures are silent: the monitors keep emitting
+control, so one slow monitor stalls the pipeline. These failures are silent: the monitors keep emitting
 verdicts from a corrupted view of the fleet, so a dropped or mis-ordered
 security-relevant event may cause an attack to go unflagged, exactly the
 continuity failure a critical-infrastructure operator cannot tolerate
-(Fig.~\ref{fig:silent}).
+(Fig.~\ref{fig:silent}). \emph{In a distributed deployment, no news is not
+good news: the completeness of the evidence stream has to be carried inside the verdict,
+not assumed behind it.}
 
 \begin{figure}[t]
 \centering
@@ -157,36 +180,47 @@ the verdict to $(\mathsf{unknown},\mathsf{incomplete})$ (Sect.~\ref{sec:guarante
 \end{figure}
 
 \paragraph{Contributions.} This paper makes four contributions.
-\begin{itemize}
-\item \sys, a resilient delivery layer that carries an unchanged three-layer monitoring
-      hierarchy~\cite{ares2026,csr2026} across the edge-cloud continuum, re-establishing
-      the delivery, ordering, liveness, isolation, and flow-control guarantees a shared
-      log cannot provide (Sect.~\ref{sec:arch}).
-\item A threat model for verification-grade monitoring that maps a tiered
-      network/device/gateway adversary to its mitigation, with the five continuity
-      properties stated as broker-contingent invariants, each closing a documented
-      shared-log failure (Sects.~\ref{sec:threatmodel}--\ref{sec:guarantees}).
-\item An evidence-aware verdict model, with a conditional-soundness proposition, that
-      attaches a completeness status to every verdict so a degraded stream can no longer
-      produce an unqualified all-clear (Sect.~\ref{sec:guarantees}).
-\item An evaluation quantifying the restored properties under crash, clock skew, silence,
-      and overload, including verdict preservation against a fault-free oracle, and
-      replaying two critical-infrastructure datasets through the real MonPoly engine
-      (Sects.~\ref{sec:eval},~\ref{sec:casestudy}).
-\end{itemize}
+\emph{(1)}~\sys, a resilient delivery layer carrying an unchanged three-layer monitoring
+hierarchy~\cite{ares2026,csr2026} across the edge-cloud continuum, re-establishing the
+delivery, ordering, liveness, isolation, and flow-control guarantees a shared log cannot
+provide (Sect.~\ref{sec:arch}). \emph{(2)}~A threat model for verification-grade
+monitoring mapping a tiered network/device/gateway adversary to its mitigation, with the
+five continuity properties stated as broker-contingent invariants
+(Sects.~\ref{sec:threatmodel}--\ref{sec:guarantees}). \emph{(3)}~An evidence-aware verdict
+model, with a conditional-soundness proposition, attaching a completeness status to every
+verdict so a degraded stream can no longer produce an unqualified all-clear
+(Sect.~\ref{sec:guarantees}). \emph{(4)}~An evaluation quantifying the restored properties
+under crash, clock skew, silence, and overload, including verdict preservation against a
+fault-free oracle, and replaying two critical-infrastructure datasets through the real
+engine (Sects.~\ref{sec:eval},~\ref{sec:casestudy}).
 
-\paragraph{Novelty.} \sys makes the \emph{completeness of the evidence stream} an
-explicit part of runtime-verification semantics: each verdict carries a continuity
-status derived from delivery, ordering, retention, and liveness evidence
+\paragraph{Novelty and positioning.} We claim no new messaging or logging primitive.
+MQTT, durable stream brokers, transactional outboxes, deduplication, and heartbeats are
+used exactly as they are, and deliberately so: an operator can deploy \sys on components
+already present and already certified in their estate, whereas a novel replication
+protocol would forfeit precisely that property. What these components do not supply is
+the link to the verification layer above them. \sys makes the \emph{completeness of the
+evidence stream} an explicit part of runtime-verification semantics: each verdict carries
+a continuity status derived from delivery, ordering, retention, and liveness evidence
 (Sect.~\ref{sec:guarantees}), so a corrupted or incomplete stream can no longer produce
-an unqualified all-clear, coupling transport resilience to verdict trustworthiness.
+an unqualified all-clear. A transport layer cannot make this judgement on its own,
+because it does not know what the monitor required. The accompanying claim is therefore
+one of \emph{necessity} rather than assembly, and we test it: removing any single
+mechanism reintroduces one specific silent failure, from $0$ to $76$ of $1200$
+timestamp-order violations without G2, a drain time of $0.043$\,s rising to $40$\,s
+without G4, and $1000$ of $2000$ verdicts silently evicted rather than surfaced without
+G5 (Table~\ref{tab:ablation}); one level up, on the security verdicts themselves, the
+shared-log baseline preserves one of seven injected incidents while the full fabric
+preserves all seven, and dropping the tick alone yields two false all-clears that no
+completeness status can flag (Sect.~\ref{sec:eval}). That is an argument no individual
+component makes.
 
 % ============================================================================
-\section{Background and the \sys Architecture}
-\label{sec:background}\label{sec:arch}
-This section introduces the hierarchical monitoring workload \sys carries and the
-single-host shared-log prototype it replaces, then derives from each layer's
-assumptions the transport requirements the fabric must meet.
+\section{Background: The Hierarchy and the Shared-Log Prototype}
+\label{sec:background}
+This section states what \sys inherits: the hierarchical monitoring workload it carries
+and the single-host shared-log prototype it replaces, both from prior
+work~\cite{ares2026,csr2026}. What \sys adds begins in Sect.~\ref{sec:arch}.
 
 \paragraph{The three-layer hierarchy.}
 \sys distributes a hierarchical monitoring workload across three tiers, each seeing a
@@ -208,18 +242,24 @@ exposing the four failures of Sect.~\ref{sec:intro} (loss, skew, silence, no flo
 control). The prototype was reported to drop $\sim$1\% of events at ingest~\cite{ares2026},
 but a controlled same-host replay does \emph{not} reproduce this (Sect.~\ref{sec:eval});
 the shared log's real exposure is loss under crash or overload, broken per-device ordering
-under skew, and silence-liveness. Prior work identifies an event bus as the
-fix~\cite{ares2026,csr2026}; this paper builds that bus and treats its properties as
-resilience requirements. Figure~\ref{fig:arch} shows the resulting architecture.
+under skew, and silence-liveness. Prior work names an event bus as the
+fix~\cite{ares2026,csr2026}; this paper builds that bus and shows it does not suffice on
+its own, because the monitor must also know when the bus has failed. Figure~\ref{fig:arch} shows the resulting architecture.
 
-\paragraph{From RV assumptions to transport requirements.}
+% ============================================================================
+\section{The \sys Architecture}
+\label{sec:arch}
+This section derives the transport requirements from each layer's assumptions and presents
+the fabric that meets them.
+
+\paragraph{From RV assumptions to transport requirements: the design argument.}
 Distributing the hierarchy turns each layer's implicit input assumption into an explicit
 transport requirement: a verdict is sound only if the monitor sees a \emph{complete} input
 (at-least-once delivery), in \emph{order} (a gateway-anchored timeline), with
 \emph{progress} under silence (a periodic tick), read \emph{independently} (per-consumer
 cursors), and \emph{without loss under load} (flow control). \sys supplies exactly these
-five (\S\ref{sec:guarantees}); each names a way monitoring silently degrades under the
-very conditions (loss, skew, silence, overload) that an incident produces.
+five (Sect.~\ref{sec:guarantees}); each names a way monitoring silently degrades under the
+conditions an incident produces.
 
 \begin{figure}[t]
 \centering
@@ -267,22 +307,20 @@ very conditions (loss, skew, silence, overload) that an incident produces.
 \node[tier, above=1mm of bbe.north]  {Backend (L3)};
 \end{tikzpicture}}
 \caption{\sys: the three-layer RV hierarchy decoupled over a two-broker fabric.
-Devices publish to a gateway-partitioned MQTT ingest (logically one broker per
-gateway; the prototype realises this as per-gateway topic prefixes on one shared
-broker, equivalent for message routing but without broker-level fault isolation) at QoS\,1
-(at-least-once); the gateway runs L1/L2 and
-a timestamping sidecar and re-publishes verdict streams to a backend NATS
-JetStream cluster, from which the L3 fleet monitors consume via independent
-durable cursors. A 1\,Hz clock-tick subject drives the time-triggered silent-node
+Devices publish at QoS\,1 to a gateway-partitioned MQTT ingest (logically one broker per
+gateway; the prototype uses per-gateway topic prefixes on one shared broker, equivalent
+for routing but without broker-level fault isolation); the gateway runs L1/L2 and a
+timestamping sidecar and re-publishes verdict streams to a backend NATS JetStream cluster,
+from which the L3 fleet monitors consume via independent durable cursors. A 1\,Hz clock-tick subject drives the time-triggered silent-node
 monitors, and flow control defers loss under transient overload.}
 \label{fig:arch}
 \end{figure}
 
 \paragraph{MQTT for device-to-gateway ingest.}
 The device-to-gateway hop is constrained and lossy, so \sys uses MQTT (Mosquitto,
-QoS\,1)~\cite{mqtt,mosquitto}: ubiquitous on IoT, ack-based, and low overhead.
-QoS\,1 gives at-least-once delivery with explicit PUBACKs; L1 is idempotent per
-$(\text{device},\text{window})$ so duplicates are harmless.
+QoS\,1)~\cite{mqtt,mosquitto}, which is ubiquitous on IoT and gives at-least-once delivery
+with explicit PUBACKs; L1 is idempotent per $(\text{device},\text{window})$, so duplicates
+are harmless.
 
 \paragraph{NATS JetStream for gateway-to-backend delivery.}
 The gateway-to-backend hop must fan a gateway's verdict stream to several
@@ -290,41 +328,37 @@ independent L3 monitors without a slow one blocking the others. \sys uses NATS
 JetStream~\cite{nats}: per-consumer durable cursors let each L3 monitor read at
 its own pace, and a dedicated 1\,Hz tick publisher writes to a JetStream subject
 as the heartbeat that time-triggered monitors need. Verdicts are keyed by
-per-device subject (\texttt{gw.$\langle$id$\rangle$.verdict}), so each device's
-stream stays FIFO-ordered while a wildcard subscription (\texttt{gw.*.verdict}) fans a
-whole gateway's devices into one monitor. MQTT fits the constrained device hop and a
-durable per-consumer log the backend; a heavier general-purpose log such as Kafka may
-impose unnecessary overhead at resource-constrained gateways.
+per-device subject (\texttt{gw.$\langle$id$\rangle$.verdict}), so each device's stream
+stays FIFO-ordered while a wildcard subscription (\texttt{gw.*.verdict}) fans a whole
+gateway's devices into one monitor.
 
 \paragraph{Timestamping sidecar.}
-A sidecar co-located with each gateway stamps each event with a trusted, monotone,
-microsecond-resolution gateway-\emph{ingest} time and orders by it, restoring the ordering
-invariant L3 assumes at the first trust boundary. The device-reported time is retained
-only for spoof detection and diagnostics, never for ordering; original device event time
-is not reconstructed.
+A sidecar co-located with each gateway stamps each event with a trusted, non-decreasing
+gateway-\emph{ingest} time and orders by it, restoring at the first trust boundary the
+ordering invariant L3 assumes. Device-reported time is retained only for
+spoof detection, never for ordering; original device event time is not reconstructed.
 
 \paragraph{Durable relay and deduplication.}
 On receipt the gateway assigns each verdict a persistent event id
 ($\langle$gw, device, seq$\rangle$) and appends it to a local \texttt{fsync}ed write-ahead
 outbox \emph{before} forwarding it to JetStream; once JetStream acknowledges the durable
 publish, an \texttt{fsync}ed confirmation cursor advances, so a restart replays only the
-un-acked suffix (bounding recovery cost). QoS\,1 with persistent sessions protects the
-device-to-broker hop; the outbox protects the gateway-to-JetStream relay against a crash.
-Backend consumers deduplicate by event id, so replays never double-count, giving
-exactly-once monitoring \emph{effect} over the at-least-once transport without distributed
+un-acked suffix, bounding recovery cost. QoS\,1 with persistent sessions protects the
+device-to-broker hop, the outbox the gateway-to-JetStream relay. Backend consumers
+deduplicate by event id, so replays never double-count, giving exactly-once monitoring
+\emph{effect} over an at-least-once transport without distributed
 transactions~\cite{helland2007life}. A narrow residual window remains between delivery of
-the brokered verdict to the gateway relay and completion of its local WAL \texttt{fsync},
-where an in-flight verdict is still in memory; Sect.~\ref{sec:eval} validates this by
-injecting a crash at each relay stage.
+the brokered verdict to the relay and its local WAL \texttt{fsync}, where the verdict is
+still only in memory; Sect.~\ref{sec:eval} injects a crash at each relay stage.
 
 \paragraph{Properties the fabric carries.}
 End-to-end, \sys carries a hierarchical security-property
 catalogue~\cite{ares2026,csr2026}: single-node checks at L1/L2 and, at L3,
 cross-device correlation (P3.1--P3.4) plus a time-triggered silent-node property
-(P3.5). Briefly, P3.1 flags a multi-vector advanced persistent threat (APT) on one device, P3.2 the same
-attack from $\geq3$ devices, P3.3 an escalation over time, P3.4 a persistent
-overflow campaign, and P3.5 a device gone silent. Each property is sound only
-because a specific transport guarantee holds (Sect.~\ref{sec:guarantees}). The
+(P3.5). Briefly, P3.1 flags a multi-vector advanced persistent threat (APT) on one device, P3.2
+the same attack from $\geq3$ devices, P3.3 an escalation over time, P3.4 a persistent
+overflow campaign, and P3.5 a device gone silent, each sound only because a specific
+transport guarantee holds (Sect.~\ref{sec:guarantees}). The
 multi-gateway view also lets \sys express a property the single-gateway prototype
 cannot observe: P3.6 flags an overflow campaign spanning $\geq2$ distinct
 gateways,
@@ -343,8 +377,8 @@ P3.7 is a \emph{fabric-enabled availability} property rather than an intrinsical
 cross-gateway one: it requires only a clock independent of the monitored stream (unlike
 P3.6, which genuinely needs $\geq2$ gateway identities). That clock is a
 \emph{backend-resident} tick publisher advancing monitoring time independently of every
-gateway stream, so silence-liveness survives the loss of \emph{all} gateways at once
-(verified with both killed; Q4), where the earlier per-gateway tick froze.
+gateway stream, so silence-liveness is by construction independent of any gateway remaining
+up, where a per-gateway tick would freeze.
 
 % ============================================================================
 \section{Threat Model and Trust Assumptions}
@@ -407,42 +441,37 @@ compromised$^\dagger$ & \emph{out of scope}: sidecar integrity trusted & n/a & f
 \end{table}
 
 \paragraph{Adversary treatment and scope.}
-Table~\ref{tab:threat} maps each capability to its mitigation. The key property is that
-an adversary who \emph{silences} a link cannot thereby hide the silence: P3.5/P3.7 turn
-suppression into a positive detection (though evidence may be delayed during a prolonged
-partition). The residual is behaviour that is malicious yet specification-conforming, the
+Table~\ref{tab:threat} maps each capability to its mitigation. The key property is that an
+adversary who \emph{silences} a link cannot thereby hide the silence: P3.5/P3.7 turn
+suppression into a positive detection, though evidence may be delayed during a prolonged
+partition. The residual is behaviour that is malicious yet specification-conforming, the
 general limit of any specification-based monitor. A gateway \emph{taken dark} is handled
-(P3.7 plus outbox replay on recovery); an \emph{actively compromised} gateway forging or
-suppressing its own verdicts is out of scope (its sidecar and outbox lie in the TCB), so
-\sys instead bounds the blast radius by keeping fleets disjoint (Sect.~\ref{sec:impl}).
+(P3.7 plus outbox replay on recovery); an \emph{actively compromised} one is out of scope,
+its sidecar and outbox lying in the TCB, so \sys bounds the blast radius by keeping fleets
+disjoint (Sect.~\ref{sec:impl}).
 
 % ============================================================================
 \section{Continuity Mechanisms and Their Invariants}
 \label{sec:guarantees}
 This section presents the continuity mechanisms \sys establishes over the two brokers,
 states each as a broker-contingent invariant tied to a specific shared-log failure, and
-defines the evidence-aware verdict algebra that couples them to the monitoring output.
+defines the verdict algebra coupling them to the output.
 
 \sys provides five continuity mechanisms, which we label as \emph{guarantees}
 \textbf{G1}~Delivery, \textbf{G2}~Order, \textbf{G3}~Tick, \textbf{G4}~Isolation, and
 \textbf{G5}~Flow (the letter G stands for \emph{guarantee}).
-We state each as an \emph{invariant} of the fabric, but stress what kind of claim these
-are: not theorems proved from first principles, but properties the underlying
-individually-established components (MQTT QoS\,1, a durable stream broker, a write-ahead
-outbox, deduplication, durable cursors, a heartbeat stream) already provide \emph{by
-assumption}, which we compose and make contingent on those components' durability
-configuration. Their value is the explicit correspondence, RV assumption $\to$ transport
-property $\to$ shared-log failure closed, not new distributed-systems results.
+We state each as an \emph{invariant} of the fabric, contingent on the durability
+configuration of the components that supply it (Sect.~\ref{sec:impl}): their value is
+the explicit correspondence, RV assumption $\to$ transport property $\to$ shared-log
+failure closed.
 
-Two of these carry the most weight. The \emph{clock-tick} mechanism is the
-subtlest: a time-triggered ``no device has reported for $T_{\mathrm{dev}}$ seconds'' property cannot
-fire from a shared log, because a log with no new lines produces no events to advance
-the monitor's clock; a 1\,Hz tick supplies that liveness under the total network
-silence a jamming or outage event produces. \emph{Flow control} (awaited
-publication and durable retention) only \emph{defers} loss under transient overload
-by letting events queue: sustained overload beyond the configured retention capacity,
-evaluated in Q7, makes exhaustion observable but cannot preserve G1 beyond capacity.
-Delivery is therefore conditional on capacity, not unconditional.
+Two carry the most weight. The \emph{clock-tick} is the subtlest: a time-triggered ``no
+device has reported for $T_{\mathrm{dev}}$ seconds'' property cannot fire from a shared
+log, since a log with no new lines produces no events to advance the monitor's clock, so a
+1\,Hz tick supplies that liveness under total silence. \emph{Flow control} only
+\emph{defers} loss by letting events queue: sustained overload beyond the configured
+retention capacity, evaluated in Q7, makes exhaustion observable but cannot preserve G1
+beyond capacity, so delivery is conditional on capacity.
 
 \paragraph{Guarantees as invariants.}
 Write $E_{\mathrm{brk}}$ for messages the ingest broker has durably accepted,
@@ -451,11 +480,10 @@ $E_{\mathrm{gw}}$ for those the gateway receives, $E_{\mathrm{wal}}$ for verdict
 observes; each verdict $v$ carries a gateway timestamp $\tau(v)$. The five guarantees
 are fabric invariants:
 \emph{(G1)}~at-least-once on two protected segments,
-$E_{\mathrm{brk}}\subseteq E_{\mathrm{gw}}$ (persistent MQTT hop, provided the broker
-has durably accepted the QoS\,1 message under a persistent session) and
-$E_{\mathrm{wal}}\subseteq\hat{E}$ (gateway--backend relay), so nothing durably
-accepted is lost, while drops \emph{before} durable acceptance (device crash,
-device-side queue, or pre-WAL window) are outside G1;
+$E_{\mathrm{brk}}\subseteq E_{\mathrm{gw}}$ (persistent MQTT hop, given durable QoS\,1
+acceptance under a persistent session) and $E_{\mathrm{wal}}\subseteq\hat{E}$
+(gateway--backend relay), so nothing durably accepted is lost, while drops \emph{before}
+durable acceptance (device crash, device-side queue, pre-WAL window) lie outside G1;
 \emph{(G2)}~monotonicity, if $v_1$ is delivered before $v_2$ then
 $\tau(v_1)\le\tau(v_2)$ for same-device verdicts;
 \emph{(G3)}~liveness, a 1\,Hz tick drives the backend even when $\hat{E}=\emptyset$;
@@ -466,12 +494,11 @@ enable resilient distributed operation.
 
 \paragraph{Evidence-aware verdicts.}
 The mechanisms above bound \emph{when} the input stream is trustworthy; a monitor that
-keeps emitting a bare ``no violation'' after the stream is corrupted reproduces the
-silent failure we set out to remove. We therefore make evidence completeness an
-explicit part of the verdict semantics. Following three-valued RV
-semantics~\cite{bauer2011rvltl}, which admit an \textsf{inconclusive} verdict when the
-observed trace is insufficient, a verdict is a pair $V=(s,c)$ of a
-\emph{security} component and an \emph{evidence-completeness} component,
+keeps emitting a bare ``no violation'' after the stream is corrupted reproduces the silent
+failure we set out to remove. We therefore make evidence completeness explicit in the
+verdict semantics. Following three-valued RV semantics~\cite{bauer2011rvltl}, which admit
+an \textsf{inconclusive} verdict when the observed trace is insufficient, a verdict is a
+pair $V=(s,c)$ of a \emph{security} and an \emph{evidence-completeness} component,
 \[
 \begin{aligned}
   s &\in \{\mathsf{violation},\ \mathsf{no\_violation},\ \mathsf{unknown}\},\\
@@ -505,12 +532,10 @@ $c_{\mathrm{L3}}=\min_{\preceq}\{c_{g_1},\dots,c_{g_n}\}$, so one incomplete gat
 a fleet-wide all-clear $\mathsf{unknown}$. We implement all four tags over the real
 JetStream (event-id continuity for gaps, a consumed-stream monotonicity check for order
 violations, the retention watermark for $\mathsf{degraded}$, tick-versus-evidence for
-$\mathsf{unavailable}$) and confirm each on a canonical scenario: a \emph{normal} stream
-stays \textsf{sound}; a \emph{retention high-water} state ($85\%$, G5) is
-\textsf{degraded}; an \emph{event-id gap} (G1) is \textsf{incomplete}, downgrading a
-\textsf{no\_violation} to \textsf{unknown}; and a \emph{required stream silent} under a
-live tick (G3) is \textsf{unavailable}, withholding the all-clear so only tick-backed
-violations stand.
+$\mathsf{unavailable}$) and confirm each on a canonical scenario: a normal stream stays
+\textsf{sound}, an $85\%$ retention high-water mark is \textsf{degraded}, an event-id gap
+is \textsf{incomplete} (downgrading \textsf{no\_violation} to \textsf{unknown}), and a
+required stream silent under a live tick is \textsf{unavailable}.
 
 \paragraph{Soundness of the verdict algebra.}
 The downgrade rule is not merely a convention: it makes the algebra \emph{sound} for a
@@ -520,9 +545,8 @@ finite set of events and preserved under supersets, i.e.\ for traces
 $\hat\sigma\subseteq\sigma$, $\hat\sigma\models\varphi\Rightarrow\sigma\models\varphi$.
 The counting and multi-vector L3 properties P3.1--P3.4 and P3.6 (existential
 \textsc{once}-formulas over device or gateway events) are of this class. The
-absence-based P3.5/P3.7 are dual: their witness is a tick-certified silence interval,
-so their soundness rests on G3 rather than on G1/G5, and we treat the monotone class
-here. Let $\sigma$ be the durably-accepted event stream for the monitored identities
+absence-based P3.5/P3.7 are dual: G3 gives their liveness while G1/G5 rule out
+loss-induced false alarms; we treat the monotone class here. Let $\sigma$ be the durably-accepted event stream for the monitored identities
 over the window (events that reached the protected path; device-side and pre-WAL losses
 lie outside G1 and hence outside this result), and $\hat\sigma=\mathrm{dedup}(\hat E)$
 the stream L3 observes after event-id deduplication.
@@ -546,12 +570,11 @@ $(\mathsf{unknown},c)$ rather than an unqualified all-clear.
 \end{proposition}
 
 \begin{proof}[sketch]
-\emph{(i)}~By G1 with intact event-id deduplication (exactly-once \emph{effect}),
-$\hat\sigma\subseteq\sigma$: redelivery cannot inflate a count and delivery loss only
-removes events, while G2 keeps the \textsc{once}-windows aligned (and, for P3.6,
-$\epsilon<W$ keeps the cross-gateway window aligned). A satisfying witness
-$W\subseteq\hat\sigma$ gives $W\subseteq\sigma$, hence $\sigma\models\varphi$; no crash
-or overload can manufacture a false violation.
+\emph{(i)}~By intact event-id deduplication (exactly-once \emph{effect}),
+$\hat\sigma\subseteq\sigma$: redelivery cannot inflate a count and loss only removes
+events, while G2 keeps the \textsc{once}-windows aligned (for P3.6, $\epsilon<W$ aligns the
+cross-gateway window). A satisfying witness $\Omega\subseteq\hat\sigma$ gives
+$\Omega\subseteq\sigma$, hence $\sigma\models\varphi$.
 \emph{(ii)}~$c=\mathsf{sound}$ certifies, over the window, no event-id gap on the
 protected segments (G1: no delivery loss), backlog below the high-water mark (G5: no
 eviction), and no order violation (G2), so $\hat\sigma$ equals $\sigma$ restricted to
@@ -564,28 +587,22 @@ $(\mathsf{no\_violation},c)\mapsto(\mathsf{unknown},c)$.
 \qed
 \end{proof}
 
-The dual absence-based properties P3.5/P3.7 obtain the analogous guarantee through the
-tick: it certifies the silence interval, so a genuine silence yields
-$(\mathsf{violation},\mathsf{sound})$, while \emph{without} the tick (G3) the silence is
-unobservable and yields a silent false all-clear, the one loss class the algebra
-cannot flag.
-
-Clause~(iii) is \emph{conditional on the loss being observable}, and that condition is
-necessary rather than incidental: event-id continuity makes delivery loss observable, a
-consumed-stream monotonicity check makes reordering observable, and the tick makes
-silence observable, so removing an input breaks the corresponding guarantee.
-A transport that carries neither (the shared log) cannot lower $c$, so every missed
-violation there is a silent false all-clear. The oracle experiment (Q8,
-Sect.~\ref{sec:eval}) validates all three clauses empirically.
+The dual absence-based P3.5/P3.7 obtain the analogous guarantee through the tick, which
+times the silence G1/G5 show to be real. Clause~(iii) is \emph{conditional on the loss being
+observable}, and that condition is necessary rather than incidental: event-id continuity
+makes delivery loss observable, a monotonicity check on the consumed stream makes
+reordering observable, and the tick makes silence observable. A transport carrying none of
+them (the shared log) cannot lower $c$, so every missed violation there is a silent false
+all-clear; equally, without the tick a genuine silence is unobservable, the one loss class
+the algebra cannot flag. The oracle experiment (Q8, Sect.~\ref{sec:eval}) validates all
+three clauses empirically.
 
 
 % ============================================================================
 \section{Implementation}
 \label{sec:impl}
 This section details how the architecture of Sect.~\ref{sec:arch} is realised: the two
-brokers and the naming scheme that routes events, the timestamping sidecar, the
-crash-tolerant relay (a write-ahead outbox with event-id deduplication), and the mapping
-onto the edge-cloud continuum. The monitors themselves are reused unchanged.
+brokers, the naming scheme routing events, and the mapping onto the continuum.
 
 \paragraph{Brokers and subjects.}
 Each gateway ingests device telemetry over MQTT (Mosquitto~\cite{mosquitto}) at QoS\,1
@@ -601,18 +618,15 @@ subject carrying the 1\,Hz liveness heartbeat.
 hierarchical design under study~\cite{ares2026,csr2026} unmodified. L1/L2 are
 lightweight; L3 is the hybrid of MonPoly~\cite{monpoly} for metric first-order
 correlation and RTLola~\cite{rtlola} for the time-triggered silent-node property, the
-latter driven by the fabric's 1\,Hz clock-tick subject. Because only the transport
-beneath them changes, the specification logic is unchanged, its temporal interpretation
-anchored to the trusted gateway-ingest timeline (Sect.~\ref{sec:arch}); an operator can
-adopt \sys without rewriting existing specifications. The fabric's own contribution is
-the trusted delivery infrastructure around the monitors: the relay, the timestamping
-stage, the tick publisher, and the backend stream.
+latter driven by the fabric's 1\,Hz tick subject. Because only the transport beneath them
+changes, the specification logic is unchanged, its temporal interpretation anchored to the
+gateway-ingest timeline, so an operator adopts \sys without rewriting specifications.
 
 \paragraph{Deployment topology.}
-L1 runs at the edge; each gateway node runs a co-located Mosquitto broker, an L1/L2
-consumer, and a sidecar over a disjoint fleet; a cloud backend runs JetStream and the L3
-monitors, so gateways fail independently. The testbed instantiates two gateway nodes of
-four emulated devices each feeding one backend, and scales out by adding gateway nodes.
+L1 runs at the edge; each gateway node runs an L1/L2 consumer and a sidecar over a
+disjoint fleet, so gateways fail independently; a cloud
+backend runs JetStream and the L3 monitors. The testbed instantiates two gateway nodes of
+four emulated devices each, and scales out by adding nodes.
 
 \paragraph{Reproducibility.}
 \emph{Host.} The containerised testbed runs on a single laptop, an Apple M4 Pro
@@ -625,68 +639,57 @@ cross-host skew.
 Python gateway/sidecar/relay, and an L3 image that builds MonPoly (OCaml) and
 RTLola (Rust) from source; emulated devices replay the workload traces. Everything is
 wired with Docker Compose and a single command brings up the fabric plus a
-coordinated-attack overlay. The workload is randomised, so each run exercises the full
-set of L3 properties (P3.1--P3.6) rather than a fixed script. Specifications, compose
-files, and monitor wiring are provided as an anonymised review artefact, released
-publicly on acceptance.
+coordinated-attack overlay. Specifications, compose
+files, and monitor wiring are available as a public
+artefact.\footnote{\url{https://github.com/nikos-kekatos/resilient-rv-fabric-edge-iot}}
 
 % ============================================================================
 \section{Evaluation on the Controlled Testbed}
 \label{sec:eval}
 This section evaluates whether \sys preserves its five continuity mechanisms under
 fault injection and at fleet scale, and quantifies the latency and recovery cost of
-doing so.
+doing so. The mechanisms are the means; what is ultimately under test is evidence completeness, so
+the sequence closes with Q8, asking whether the security verdicts themselves survive and
+whether those that do not are at least reported as incomplete rather than as an
+all-clear.
 
 \paragraph{Testbed and methodology.}
-We deploy \sys on a multi-gateway testbed: $G$ gateways each serving a share of
-$N$ emulated devices that replay a documented attack and benign
-workload~\cite{ares2026,csr2026}, with the brokers first colocated and then
-separated by an emulated wide-area link. All components are containerised on the laptop
-host detailed under Reproducibility below (Mosquitto\,2, NATS\,2 JetStream, a MonPoly/RTLola
-image, small JSON payloads). Detection figures are means over five runs; per-event latency
-figures (Q2) are medians over a paced sample run per link setting, with WAN delay injected
-via Linux \texttt{netem}. We ask eight questions, each naming the guarantee (G1--G5) or monitored property
-(P3.x) it targets:
-(Q1)~\emph{correctness}: does the fabric close the documented gaps (G1--G2);
-(Q2)~\emph{overhead}: what per-event latency does it add;
-(Q3)~\emph{throughput}: what message rate does it sustain (G4--G5);
-(Q4)~\emph{detection}: does it flag cross-tier, cross-gateway, and silent-node attacks
-(P3.1--P3.7);
-(Q5)~\emph{ablation}: what failure mode does removing each mechanism reintroduce
-(G1--G5);
-(Q6)~\emph{crash tolerance}: does the durable outbox survive a gateway crash at each
-relay stage (G1);
-(Q7)~\emph{overload horizon}: how long does the fabric absorb a backend outage before
-continuity is lost (G5); and
-(Q8)~\emph{verdict preservation}: how many true security incidents does each
-configuration miss, or silently mis-report as an all-clear, relative to a fault-free
-oracle (G1--G5).
+We deploy \sys on a multi-gateway testbed: $G$ gateways each serving a share of $N$
+emulated devices that replay a documented attack and benign
+workload~\cite{ares2026,csr2026}, brokers first colocated and then separated by an emulated
+wide-area link, all containerised on the host detailed under Reproducibility above.
+Detection figures are means over five runs; per-event latency (Q2) figures are medians over
+a paced sample run per link setting, with WAN delay injected via Linux \texttt{netem}. We ask eight questions, each naming the guarantee (G1--G5) or monitored property (P3.x)
+it targets: (Q1)~\emph{correctness}, does the fabric close the documented gaps (G1--G3);
+(Q2)~\emph{overhead}, the per-event latency added; (Q3)~\emph{throughput}, the sustained
+message rate (G4--G5); (Q4)~\emph{detection} of cross-tier, cross-gateway and silent-node
+attacks (P3.1--P3.7); (Q5)~\emph{ablation}, the failure removing each mechanism
+reintroduces (G1--G5); (Q6)~\emph{crash tolerance} at each relay stage (G1);
+(Q7)~\emph{overload horizon} before continuity is lost (G5); and (Q8)~\emph{verdict
+preservation} against a fault-free oracle (G1--G5).
 
 \paragraph{Where the fabric differs (Q1).}
 We compare \sys against the single-host shared log (the same hierarchy \emph{without} the
-broker fabric), replaying one fixed $7000$-event trace through both transports at matched
-load. For steady-state ingest the two are indistinguishable: \emph{both} deliver every
-event to L1 ($0$ loss over $7000$ events, at $500$ and $3000$\,msg/s, five trials each).
+broker fabric), replaying one fixed $7000$-event trace through both at matched load. For
+steady-state ingest the two are indistinguishable: \emph{both} deliver every event to L1
+($0$ loss, at $500$ and $3000$\,msg/s, five trials each).
 The $\sim$1\% ingest loss reported for the earlier prototype~\cite{ares2026} did not
-reproduce here, so it is a condition-specific artefact, not where the fabric differs. It
-differs on three properties the evaluated shared-log design lacks. \emph{Ordering}: on the
+reproduce, so it is condition-specific and not where the fabric differs. It differs on
+two properties the evaluated shared-log design lacks. \emph{Ordering}: on the
 same $1200$-verdict stream, device-time ordering leaves $76$ out of order under the
-time-spoof profile, the gateway sidecar $0$. \emph{Silence-liveness}: under total silence
-the shared log yields no events so P3.5 never fires, whereas the 1\,Hz tick fires it
-within one tick of the $\sim$5\,s deadline. \emph{Fault-resilience}: the delivery
-guarantee's real payoff is crash recovery and bounded overload (Q6, Q7).
+time-spoof profile, the gateway sidecar $0$. \emph{Silence-liveness}: under total silence the shared log yields no events so P3.5 never
+fires, whereas the 1\,Hz tick fires it within one tick of the $\sim$5\,s deadline.
 
 \paragraph{Per-event latency under a wide-area link (Q2).}
 We place the fabric clients behind an emulated wide-area link (Linux \texttt{netem},
-one-way delay $\delta$ per hop) and measure publish-to-consume latency on each hop
-(mean/p95 in ms over a paced 400-sample run). Colocated, both hops are sub-millisecond
-($0.5/1.0$ MQTT, $0.9/1.8$ JetStream). The two scale differently: the MQTT
-device-to-gateway hop grows as ${\approx}3\delta$ (QoS\,1's acknowledged handshake
-crosses the link several times), mean $17/32/60$\,ms at $\delta{=}5/10/20$\,ms, and
-the JetStream gateway-to-backend hop as ${\approx}\delta$ ($7/13/23$\,ms). Even at a
-moderate $\delta{=}20$\,ms link, p95 stays under $75$\,ms, over an order of magnitude
-below the second-scale L3 detection latency. Transport overhead was not the bottleneck,
-and QoS\,1's steeper WAN cost buys at-least-once delivery on the lossy edge hop.
+one-way delay $\delta$ per hop) and measure publish-to-consume latency per hop (mean/p95
+in ms, paced 400-sample run). Colocated, both hops are sub-millisecond in the mean ($0.5/1.0$ MQTT,
+$0.9/1.8$ JetStream). They scale differently: the MQTT hop grows as ${\approx}3\delta$
+because QoS\,1's acknowledged handshake crosses the link several times (mean $17/32/60$\,ms
+at $\delta{=}5/10/20$\,ms), the JetStream hop as ${\approx}\delta$ ($7/13/23$\,ms). Even at
+$\delta{=}20$\,ms, p95 stays under $75$\,ms, over an order of magnitude below the
+second-scale L3 detection latency, so transport was not the bottleneck and QoS\,1's
+steeper WAN cost buys at-least-once delivery on the lossy edge hop.
 
 \paragraph{Throughput and fleet scale (Q3).}
 A saturation sweep (one durable consumer, rising producer count) climbs from
@@ -701,30 +704,23 @@ consumers.
 \paragraph{Detection (Q4).}
 An eight-device, two-gateway workload (mixed overflow/APT/spam/time-spoof/clean) over
 five $150$\,s runs fired all six properties P3.1--P3.6 on every run ($41.6\pm2.1$
-incidents). The fabric-dependent ones fired: cross-device \textbf{P3.2} and
-cross-gateway \textbf{P3.6} need the backend fleet view and per-consumer cursors
-(P3.6 is unobservable single-gateway), and time-triggered \textbf{P3.5} surfaces only
-because the tick drives polling under silence. Taking one gateway dark mid-run,
-\textbf{P3.7} flags gateway-stream loss within the $T_{\mathrm{gw}}{=}10$\,s window, distinct from
-an individual device going quiet (though not identifying the cause).
+incidents), including the fabric-dependent ones: cross-device \textbf{P3.2} and
+cross-gateway \textbf{P3.6} need the backend fleet view and per-consumer cursors (P3.6 is
+unobservable single-gateway), and time-triggered \textbf{P3.5} surfaces only because the
+tick drives polling under silence. Taking one gateway dark mid-run, \textbf{P3.7} flags
+gateway-stream loss within $T_{\mathrm{gw}}{=}10$\,s, distinct from an individual device
+going quiet (though not identifying the cause).
 
-\paragraph{Clock-skew resilience of P3.6 (two independent hosts).}
+\paragraph{Clock-skew resilience of P3.6 (Q4, two independent hosts).}
 We validate P3.6's skew resilience on \emph{two independent machines} (cloud VMs, separate
 kernels, real network, NTP disabled on gw2 so its clock diverges genuinely). A per-gateway
-clock-beacon measures the realised cross-gateway offset $\epsilon$ against a backend
-reference; a zero-skew control reads $\epsilon{=}0.001$\,s. Sweeping gw2's injected offset
-over $0/5/10/20/35$\,s, the measured $\epsilon$ tracks it to within network jitter
+clock-beacon measures the realised offset $\epsilon$ against a backend reference, with a
+zero-skew control at $\epsilon{=}0.001$\,s. Sweeping gw2's injected offset over
+$0/5/10/20/35$\,s, the measured $\epsilon$ tracks it to within network jitter
 ($0.001/4.75/9.71/19.64/33.76$\,s), and P3.6 (``$\geq2$ gateways within $W{=}30$\,s'')
-stays sound while $\epsilon<W$ (offsets up to $20$\,s) and flips once $\epsilon$ exceeds
-the window ($35$\,s), as expected for a windowed property. A real cross-region WAN and
-correlated multi-gateway failure remain future work (Sect.~\ref{sec:limits}).
-
-\paragraph{Auditable witnesses.}
-Every verdict carries the evidence that produced it, so an alert is a replayable record
-rather than a bare flag: a P3.6 record names the distinct gateways that discharged the
-campaign, a P3.5 record the device, triggering timestamp, and $\sim$5\,s detection
-latency. Duplicates are recognisable by event id and the timeline reconstructable by
-timestamp, so the log is auditable.
+stays sound while $\epsilon<W$ and flips once $\epsilon$ exceeds the window, as expected
+for a windowed property. A real cross-region WAN and correlated multi-gateway failure
+remain future work (Sect.~\ref{sec:limits}).
 
 \paragraph{Failure mode on mechanism removal (Q5).}
 Each guarantee is characterised by the failure its removal reintroduces
@@ -732,12 +728,9 @@ Each guarantee is characterised by the failure its removal reintroduces
 measure directly: a fast L3 consumer drains $2000$ verdicts in $0.043\pm0.001$\,s (five
 runs) while a slow peer ($20$\,ms/verdict) on its own durable cursor has processed only
 $3$, a $\sim$940$\times$ isolation against the $40$\,s a single shared cursor would
-impose by head-of-line blocking. The other four are quantified elsewhere: ordering by the
-$76/1200$ Q1 violations, delivery and flow control by the crash (Q6) and overload (Q7)
-experiments, and the tick by P3.5's inability to fire from a silent log. Q8 then carries
-each of these transport-level failures one level up, to the security incidents each
-disabled mechanism causes to be missed or silently mis-reported against a fault-free
-oracle.
+impose by head-of-line blocking. The other four are quantified elsewhere (Table~\ref{tab:ablation}). Q8 then carries each
+of these transport-level failures one level up, to the security incidents each disabled
+mechanism causes to be missed or silently mis-reported.
 
 \begin{table}[t]
 \centering
@@ -752,8 +745,8 @@ from the experiments cross-referenced in the last column.}
 \textbf{Mechanism} & \textbf{Failure on removal} & \textbf{Measured effect (with $\to$ without)} \\
 \midrule
 \textbf{G1}~Delivery & crash / overload loses un-acked evidence & $1$ in-flight event lost if the crash precedes WAL \texttt{fsync}, $0$ after; without the outbox the whole un-acked suffix is at risk (Q6) \\
-\textbf{G2}~Order & metric monitors see a reordered stream & $0\to76$ of $1200$ timestamp-order violations (Q1) \\
-\textbf{G3}~Tick & silent-node never fires under total silence & P3.5 fires within one tick $\to$ $0$ pulses / no firing when the tick is absent (\S\ref{sec:arch}) \\
+\textbf{G2}~Order & metric monitors see a reordered stream & $0\to76$ of $1200$ timestamp-order violations under time-spoof (Q1) \\
+\textbf{G3}~Tick & silent-node never fires under total silence & P3.5 fires within one tick $\to$ $0$ pulses / no firing when the tick is absent (Q1) \\
 \textbf{G4}~Isolation & one slow consumer stalls all (head-of-line) & fast drain $0.043$\,s $\to$ $40$\,s shared cursor ($\sim$940$\times$) (Q5) \\
 \textbf{G5}~Flow & transient overload dropped, not queued & discard-new surfaces every drop $\to$ discard-old silently loses $1000/2000$ (Q7) \\
 \bottomrule
@@ -762,41 +755,16 @@ from the experiments cross-referenced in the last column.}
 
 \paragraph{Crash recovery of the durable outbox (Q6).}
 We inject a hard crash (\texttt{SIGKILL}-equivalent) into the gateway relay at each of
-its three stages while it relays $50$ verdicts, then restart and read the whole stream
-through backend deduplication (Table~\ref{tab:crash}). A crash \emph{after} the WAL
-\texttt{fsync} loses nothing: the un-acked suffix is replayed, and any resulting
-duplicate is collapsed to zero double-counted incidents (exactly-once monitoring
-\emph{effect}). The only loss is a crash \emph{before} the \texttt{fsync}, dropping the
-single in-flight verdict still in memory, the residual window of Sect.~\ref{sec:arch}.
-Recovery is linear in the un-acked backlog: worst case (a lost cursor forcing a full
-replay) takes $8.8$/$95$/$474$\,ms for $100$/$1000$/$5000$ entries
-($\approx$0.095\,ms/entry).
+its three stages while it relays $50$ verdicts (crash on \#25), then restart and read the
+whole stream through backend deduplication. Crashing \emph{before} the local WAL
+\texttt{fsync} (S1), while the verdict is still only in memory, loses that one in-flight
+verdict, the residual window of Sect.~\ref{sec:arch}. Crashing \emph{after} it loses
+nothing: persisted-but-unacknowledged (S2) and acknowledged-but-cursor-not-advanced (S3)
+both lose $0$, S3 re-publishing one duplicate that deduplication collapses to $0$
+double-counted incidents (exactly-once monitoring \emph{effect}).
+Recovery is linear in the backlog: a lost cursor forcing a full replay takes
+$8.8$/$95$/$474$\,ms for $100$/$1000$/$5000$ entries ($\approx$0.095\,ms/entry).
 
-\begin{table}[t]
-\centering
-\caption{Q6: gateway-relay crash injected at each stage ($50$ verdicts, crash on
-\#25), measured through backend event-id deduplication. \emph{Duplicate publishes} are
-verdicts re-sent on restart; \emph{duplicate incidents} are those that survive
-deduplication (always $0$). Only a crash before the WAL persist loses the in-flight
-verdict.}
-\label{tab:crash}
-\footnotesize
-\begin{tabular}{@{}lccc@{}}
-\toprule
-\textbf{Crash stage} & \textbf{Events} & \textbf{Duplicate} & \textbf{Duplicate} \\
-                     & \textbf{lost}   & \textbf{publishes} & \textbf{incidents} \\
-\midrule
-S1: before WAL \texttt{fsync}         & \textbf{1} & 0 & 0 \\
-S2: after WAL, before publish ack     & 0 & 0 & 0 \\
-S3: after publish ack, before cursor  & 0 & 1 & 0 \\
-\bottomrule
-\end{tabular}
-\\[3pt]
-{\footnotesize\emph{Stages.} S1: between the gateway's delivery of the brokered verdict
-and the local WAL \texttt{fsync}, when the in-flight verdict is still only in memory.
-S2: persisted to the WAL but not yet acknowledged by JetStream. S3: published and
-acknowledged, but the consumer cursor not yet advanced.}
-\end{table}
 
 \paragraph{Overload buffer horizon (Q7).}
 Flow control defers loss only while the backend buffer holds; we measure what happens
@@ -808,11 +776,8 @@ whereas \emph{discard-new} raises $1000$ explicit publish errors, making the sam
 the first rejected or evicted publication marks it \textsf{incomplete}, consistent with
 the algebra of Sect.~\ref{sec:guarantees} (retaining or retrying the rejected event is
 future work, Sect.~\ref{sec:limits}). The buffer absorbs an outage of
-$T_{\text{buffer}}=C/R_{\text{in}}$; at the measured $1000$-device rate
-($R_{\text{in}}\!\approx\!1930$\,msg/s), buffers of $10^4$/$10^5$/$10^6$ messages hold
-about $5.2$/$51.8$/$518$\,s, so a million-message buffer covers an $\approx$8.6\,min
-backend outage. The durable-publish ceiling ($\approx$10.7\,K\,msg/s, single producer)
-is consistent with the saturation sweep above.
+$T_{\text{buffer}}=C/R_{\text{in}}$: at $\approx$1930\,msg/s, a million-message buffer
+covers $\approx$8.6\,min.
 
 
 \paragraph{Verdict preservation against a fault-free oracle (Q8).}
@@ -822,53 +787,45 @@ failure; this experiment measures the consequence one level up, on the
 properties P3.1--P3.7 and take the incident set the \emph{unmodified} MonPoly engine
 (with tick-driven reference detectors for the liveness properties P3.5/P3.7) produces
 from the fault-free stream as the ground-truth \emph{oracle} $I^\star$
-($|I^\star|{=}7$). We then inject one combined fault campaign: a gateway crash, an
-evidence reordering, node and gateway silence, and a retention overload, each realised
-by the measured behaviour of Q6--Q7 (an in-flight loss before the WAL \texttt{fsync}, a
-non-monotone rejection, an absent clock, a \emph{discard-old} silent eviction). We
-replay it under the shared log, the full fabric, and the fabric with each guarantee
-removed. The only variable is which alerts, and in what order, reach the unmodified
-detectors, so any divergence from $I^\star$ is attributable to the transport layer.
-The campaign is seeded and replayed byte-identically across all seven configurations,
-with each fault bound to one incident: the pre-\texttt{fsync} crash loses \texttt{e1}'s
-fifth overflow (dropping P3.4's count $5\!\to\!4$, G1); \texttt{c1}'s overflow is
-transposed after its time-anomaly, breaking the P3.1 window (G2); \emph{discard-old}
-evicts the oldest backlog entries, dropping the P3.2 botnet count (G5); node \texttt{f1}
-and gateway \texttt{gw3} go silent at fixed offsets for P3.5/P3.7 (G3); and the
-cross-gateway P3.6 campaign spans two gateways. The P3.3 escalation on \texttt{d1} is a
-device-local \emph{control} that no fault touches, and is the single incident the shared
-log preserves. Each incident is hit by at most one fault, so the one-miss-per-mechanism
-structure is a fixed property of the seeded campaign, not a per-configuration tailoring;
-the exact ids, timestamps, and bindings are pinned in the artifact
-(\texttt{exp\_oracle.py}). This is a controlled causal experiment across the seven
-property classes, not a statistically representative detection benchmark.
-Each missed incident is then labelled by the verdict algebra of
-Sect.~\ref{sec:guarantees} from the state a consumer observes: a miss it downgrades to
-\textsf{incomplete} is surfaced as an honest \emph{unknown}, whereas a miss it cannot
-flag is a silent \emph{false all-clear}.
+($|I^\star|{=}7$). We then inject one seeded fault campaign, replayed as an identical alert sequence under the shared log,
+the full fabric, and the fabric with each guarantee removed, its faults realised by the
+measured behaviour of Q6--Q7 and each bound to one incident: a pre-\texttt{fsync} crash
+loses \texttt{e1}'s fifth overflow (P3.4's count $5\!\to\!4$, G1); \texttt{c1}'s overflow
+is transposed after its time-anomaly, breaking the P3.1 window (G2); \emph{discard-old}
+evicts backlog, dropping the P3.2 botnet count (G5); node \texttt{f1} and a third gateway
+\texttt{gw3} go silent at fixed offsets for P3.5/P3.7 (G3); and the P3.6 campaign spans
+two gateways. The P3.3 escalation on \texttt{d1} is a device-local \emph{control} no fault
+touches, and is the single incident the shared log preserves. Since each incident is hit
+by at most one fault, the one-miss-per-mechanism structure is a property of the seeded
+campaign, not per-configuration tailoring; ids, timestamps, and bindings are pinned in the
+artefact (\texttt{exp\_oracle.py}). The only variable is which alerts, and in what order,
+reach the unmodified detectors, so any divergence from $I^\star$ is attributable to the
+transport. This is a controlled causal experiment across the seven property classes, not
+a statistically representative benchmark.
+Each missed incident is labelled by the algebra of Sect.~\ref{sec:guarantees} from the
+state a consumer observes: a miss downgraded to \textsf{incomplete} surfaces as an honest
+\emph{unknown}, one it cannot flag as a silent \emph{false all-clear}.
 
-Table~\ref{tab:oracle} reports the outcome. The shared log preserves only $1$ of the $7$
-incidents, and every one of its six misses is a silent false all-clear: it cannot express
-the gateway-scoped P3.6/P3.7, has no tick for the silent-node P3.5, and drops the crash-,
-reorder-, and overload-hit incidents with no signal an operator could act on. The full
-fabric reproduces the oracle exactly ($7/7$, zero false all-clears), and each
+Table~\ref{tab:oracle} reports the outcome. Every one of the shared log's six misses is a
+silent false all-clear: it cannot express the gateway-scoped P3.6/P3.7, has no tick for
+the silent-node P3.5, and drops the crash-, reorder-, and overload-hit incidents with no
+signal an operator could act on. The full fabric absorbs every fault and so reproduces the oracle by
+construction; the informative rows are the ablations, where each
 single-mechanism removal bar the timeliness guarantee G4 reintroduces one class of miss:
 direct causal evidence that the mechanism, not incidental engineering, preserves the
-verdict. The central result is the last column: removing G1, G2, or G5 leaves the
-evidence signal intact (event ids for the G1/G5 losses, the monotonicity check for the G2
+verdict. The central result is the last column. Removing G1, G2, or G5 leaves the evidence
+signal intact (event ids for the G1/G5 losses, the monotonicity check for the G2
 reordering), so the miss is \emph{downgraded} to a flagged \textsf{unknown} rather than
-reported as a clean all-clear. The exception is G3: the tick is the very liveness clock
+reported as a clean all-clear. G3 is the exception: the tick is the very liveness clock
 the completeness status is computed against, so removing it makes the two silence
 incidents unflaggable and they revert to false all-clears, the one loss class the algebra
-cannot surface. G4 preserves the incident \emph{set} ($7/7$) but not delivery
-\emph{latency}, the timeliness guarantee quantified separately above
-($\sim$940$\times$ isolation).
+cannot surface. G4 preserves the incident \emph{set} but not delivery \emph{latency}, quantified above.
 
 \begin{table}[t]
 \centering
 \caption{Q8: fault-injected verdict preservation against the fault-free oracle
 ($|I^\star|{=}7$ incidents spanning P3.1--P3.7). One combined fault campaign (crash,
-reorder, silence, overload) is replayed under each configuration; incident sets are
+reorder, silence, overload) is replayed at the alert level under each configuration; incident sets are
 computed by the \emph{unmodified} MonPoly engine plus tick-driven reference detectors.
 A \emph{false all-clear} is a missed incident the evidence algebra cannot
 flag: a silent \textsf{no\_violation}; a \emph{downgraded} miss is instead surfaced
@@ -898,27 +855,43 @@ $-$G5 flow       & $6/7$ & $1$ & $0$ & $1$ (eid gap) \\
 
 \paragraph{Independent re-execution (reproducibility).}
 Re-running the public implementation on a \emph{fresh single host} with native brokers
-(no containers) reproduces the qualitative claims with $95\%$ CIs: $0\%$ loss at
-$250/500/1000$ devices ($1997\pm20$\,msg/s, $p95$ $121\pm6$\,ms at $1000$), ingest
-saturation near $7$k\,msg/s, isolation $\sim$208$\times$, and the crash result
-(Table~\ref{tab:crash}) \emph{exactly}. Absolute figures are host-dependent; the
+reproduces the qualitative claims with $95\%$ CIs: $0\%$ loss at $250/500/1000$ devices
+($1997\pm20$\,msg/s, $p95$ $121\pm6$\,ms at $1000$), saturation near $7$k\,msg/s, isolation
+$\sim$208$\times$, and the crash result \emph{exactly}. Absolute figures are host-dependent; the
 re-execution establishes reproducibility of the \emph{behaviour}.
+
+\paragraph{Capacity bounds for scale-out.}
+The testbed is lab-scale, so we state the measured figures as \emph{bounds a larger
+deployment must respect} rather than as a scale claim. Per durable stream, ingest is
+bounded by the publish ceiling ($\approx$10.7\,K\,msg/s single producer, rising to a
+$\approx$14\,K\,msg/s plateau at zero loss); past the drain rate the offered load queues
+rather than drops, so exceeding the bound costs latency ($p95$ $\sim$1\,s) before it costs
+evidence. A fleet is sized against that ceiling: the $1000$-device workload
+($\approx$1930\,msg/s) uses under a fifth of it, and read capacity scales independently
+with additional L3 consumers. Tolerance to a backend outage is
+$T_{\text{buffer}}=C/R_{\text{in}}$, and resuming after a gateway crash costs
+$\approx$0.095\,ms per un-acked entry ($474$\,ms for a $5000$-entry replay), so both buffer
+capacity and recovery time follow from the fleet rate and the backlog a deployment
+permits. These bounds are per-stream and per-gateway and therefore compose across
+gateways; what a single host cannot establish is behaviour under a real cross-region WAN
+and under correlated multi-gateway partition, which is why the ordering guarantee is
+validated across two independent machines above (Q4) and why the two remaining threats
+are named explicitly in Sect.~\ref{sec:limits}.
 
 % ============================================================================
 \section{Real-Data Validation: Water-SCADA and IoT/IIoT Datasets}
 \label{sec:casestudy}
-We validate the fabric on real critical-infrastructure data, replaying two
-openly-published datasets, WUSTL-IIoT-2021~\cite{wustl2021} (water-supply SCADA) and
-TON\_IoT~\cite{moustafa2021toniot,alsaedi2020toniot} (IoT/IIoT), through the fabric and
-the real MonPoly L3 engine. \emph{Scope.} The question is transport, not detection
+We validate the fabric on real critical-infrastructure data, replaying two openly-published
+datasets, WUSTL-IIoT-2021~\cite{wustl2021} (water-supply SCADA) and
+TON\_IoT~\cite{moustafa2021toniot,alsaedi2020toniot} (IoT/IIoT), through the real MonPoly
+L3 engine. \emph{Scope.} The question is transport, not detection
 accuracy: whether real security-event streams can be carried and correlated end-to-end
 while preserving the RV assumptions of completeness, ordering, and liveness. These are
 flow logs, not distributed deployments, so they exercise detection through the unmodified
-engine, not the mechanisms G1--G5 (Sect.~\ref{sec:eval}); thresholds are fixed a~priori
-and untuned, and as neither dataset records a gateway assignment the cross-gateway
-property runs over a \emph{synthetic} partition of source identities across two logical
-gateways (Sect.~\ref{sec:limits}): each identity is hashed to one gateway independent of
-label and attack class, so the partition cannot have been tuned for cross-gateway firings.
+engine, not the mechanisms G1--G5; thresholds are fixed a~priori and untuned, and as
+neither dataset records a gateway assignment the cross-gateway property runs over a
+\emph{synthetic} partition (Sect.~\ref{sec:limits}), each identity hashed to a gateway independent of
+label and attack class, so it cannot have been tuned for cross-gateway firings.
 
 Because the device-payload predicates of Sect.~\ref{sec:eval} target application misuse
 rather than network-flow malware, we add three flow monitors over \emph{failed}
@@ -940,33 +913,26 @@ cross-gateway \textbf{P3.6} $17$/$154$ (WUSTL/TON\_IoT), at up to three coordina
 across two gateways, validating the fleet properties on labelled multi-source traffic.
 Application-layer classes (injection, XSS, ransomware, MITM) need content-level
 specifications and are out of scope. These counts are \emph{episodes} (consecutive
-satisfaction timepoints collapsed), distinct coordinated events rather than
-per-timepoint alerts; with the Sect.~\ref{sec:eval} monitors applied unchanged, the study
-extends those controlled-testbed results to \emph{real}, labelled attack traffic
-correlated end-to-end through the formal engine.
+satisfaction timepoints collapsed), so they are distinct coordinated events rather than
+per-timepoint alerts.
 
 % ============================================================================
 \section{Related Work}
 \label{sec:related}
-\sys builds directly on two recent hierarchical RV designs for edge-IoT security. The
-first introduces the three-layer monitoring hierarchy and its hybrid MonPoly/RTLola
-backend for fleet-wide temporal correlation~\cite{ares2026}; the second develops the
-formal-methods specification of the layered security properties~\cite{csr2026}. Both
-are validated as single-host prototypes reading a shared log, which leaves the delivery
-layer, and thus resilience, out of scope. This paper extends that line of work by
-supplying the resilient delivery layer they lack: it carries the same, unmodified
-monitoring hierarchy across the edge-cloud continuum and makes the completeness of the
-evidence stream part of each verdict.
+\sys builds directly on two recent hierarchical RV designs for edge-IoT security: the
+first introduces the three-layer hierarchy and its hybrid MonPoly/RTLola backend for
+fleet-wide temporal correlation~\cite{ares2026}, the second the formal-methods
+specification of the layered security properties~\cite{csr2026}. Both are validated as
+single-host prototypes reading a shared log, leaving the delivery layer, and thus
+resilience, out of scope. This paper supplies the layer they lack, carrying the same
+unmodified hierarchy across the edge-cloud continuum and making evidence completeness
+part of each verdict.
 
-The components \sys composes are individually established: MQTT QoS\,1, JetStream,
-write-ahead outboxes, deduplication, durable cursors, and heartbeat streams. The
-contribution is not inventing them but integrating them into a \emph{verification-aware}
-fabric with an explicit correspondence among RV assumptions, transport guarantees,
-adversary threats, and continuity outcomes. Against that requirement the shared-log RV
+Measured against the five guarantees, the shared-log RV
 prototype~\cite{ares2026,csr2026} and MQTT-only monitoring lack durable delivery,
-independent consumers, a silence-aware clock, and trusted ordering; generic stream
-processors provide durability and isolation but no RV-specific ordering or
-critical-infrastructure threat model; \sys supplies all five.
+independent consumers, a silence-aware clock, and trusted ordering, while generic stream
+processors supply durability and isolation but no RV-specific ordering and no
+critical-infrastructure threat model (Sect.~\ref{sec:threatmodel}).
 
 \paragraph{Hierarchical and spatial RV.}
 STREL~\cite{strel2017} and SaSTL~\cite{sastl2020} formalise hierarchical and spatially
@@ -977,40 +943,46 @@ multi-tier monitoring; \sys is orthogonal, addressing how such a hierarchy is
 
 \paragraph{Distributed, decentralised, and fault-tolerant RV.}
 RV at scale has been studied at the algorithm level, in stream-based specification
-languages, and in distributed and decentralised monitoring~\cite{rvsurvey,bauer2012decentralised},
-and applied to CPS co-simulation and digital-twin
-pipelines~\cite{temperekidis2022fmirv,temperekidis2022dt}. Closest to us is the
-fault-tolerant distributed-RV line: Fraigniaud et al.\ characterise the opinions a
-fault-tolerant distributed monitor needs~\cite{fraigniaud2014opinions}, Bonakdarpour et
-al.\ give crash-resilient decentralised algorithms~\cite{bonakdarpour2016decentralized},
-and Basin et al.\ monitor MFOTL over \emph{out-of-order} streams~\cite{basin2017outoforder}.
-That work makes the monitoring \emph{logic} fault- or reordering-tolerant while
-abstracting the transport; \sys sits below it, making the \emph{delivery layer's} loss,
-ordering, and liveness properties first-class and measurable, so the stream those
-algorithms consume is the stream their correctness assumes.
+languages, and in distributed and decentralised
+monitoring~\cite{rvsurvey,bauer2012decentralised}, and applied to CPS co-simulation and
+digital-twin pipelines~\cite{temperekidis2022fmirv,temperekidis2022dt}. Closest to us is
+the fault-tolerant line: Fraigniaud et al.\ characterise the opinions a fault-tolerant
+distributed monitor needs~\cite{fraigniaud2014opinions}, Bonakdarpour et al.\ give
+crash-resilient decentralised algorithms~\cite{bonakdarpour2016decentralized}, and Basin
+et al.\ monitor MFOTL over \emph{out-of-order} streams~\cite{basin2017outoforder}. That
+work makes the monitoring \emph{logic} fault- or reordering-tolerant while abstracting the
+transport; \sys sits below it, making the delivery layer's loss, ordering, and liveness
+properties first-class and measurable, so the stream those algorithms consume is the
+stream their correctness assumes.
 
 \paragraph{Cloud-native messaging and critical-infrastructure security.}
 MQTT~\cite{mqtt,mosquitto}, NATS~\cite{nats}, and Kafka~\cite{kafka} are the standard
 cloud-native telemetry transports; \sys repurposes this layer for \emph{verification},
 requiring the five guarantees of Sect.~\ref{sec:guarantees} rather than best-effort
-delivery. Orthogonally, IoT security monitoring spans surveys~\cite{cavalli2024iotsec},
-ML intrusion detection~\cite{santhoshkumar2023mliot}, and attack-path analysis across
+delivery. Orthogonally, IoT security monitoring spans surveys~\cite{cavalli2024iotsec}, ML
+intrusion detection~\cite{santhoshkumar2023mliot}, and attack-path analysis across
 critical infrastructures~\cite{stellios2018iot} over the edge-cloud
-continuum~\cite{shi2016edge}. The tiered pattern recurs across sectors (water and
-IoT/IIoT here, equally rail/transport SCADA, healthcare-IoT, building automation), so
-the delivery-layer guarantees are sector-independent; \sys contributes that
-verification-grade delivery layer, not the detection or resource-management logic.
+continuum~\cite{shi2016edge}. The tiered pattern recurs across sectors, including resilience
+architectures for electrical power and energy systems~\cite{resilagent2026}, so the
+delivery-layer guarantees are sector-independent; \sys contributes that
+verification-grade delivery layer, not the detection logic.
 
 % ============================================================================
 \section{Limitations and Threats to Validity}
 \label{sec:limits}
 \emph{Testbed scope.} The throughput, crash-recovery, and detection experiments run on a
-single containerised host, so their absolute figures are indicative and crash tests cover
-one gateway's relay path, not correlated multi-gateway failure. P3.6's skew resilience,
-however, is measured across \emph{two independent machines} with separate kernels and a
-real network (Q4), validated against an $\epsilon{\approx}0$ control;
-the remaining threads are a real cross-region WAN (the two hosts are same-region) and
-correlated multi-gateway partition. \emph{Clock-tick source.} The tick is
+single containerised host. That establishes that each mechanism holds its stated invariant
+under injected faults and that removing it reintroduces one specific failure; it does not
+establish the absolute throughput or latency of a production deployment, whose figures are
+host- and network-dependent (the fresh-host re-execution reproduces the behaviour, not the
+numbers). We therefore report capacity as bounds a scale-out must respect
+(Sect.~\ref{sec:eval}) rather than as a scale claim, and crash tests cover one gateway's
+relay path, not correlated multi-gateway failure. The evaluation is not uniformly
+single-host: P3.6's skew resilience is measured across \emph{two independent machines} with
+separate kernels and a real network (Q4) against an $\epsilon{\approx}0$ control, so the
+ordering guarantee is not an artefact of shared-host scheduling. The immediate next
+experiments are multi-host operation at fleet scale, a real cross-region WAN (our hosts are
+same-region), and correlated multi-gateway partition. \emph{Clock-tick source.} The tick is
 backend-resident, so silence-liveness survives the loss of every gateway (verified with
 both killed); the residual dependency is the backend, which a production deployment should
 replicate. \emph{Trusted gateway boundary.} The sidecar and outbox lie inside the trusted
@@ -1028,21 +1000,28 @@ $95\%$ intervals in Sect.~\ref{sec:eval}.
 \section{Conclusion}
 \label{sec:conclusion}
 \sys turns a single-host, shared-log RV prototype into a resilient delivery layer for
-security monitoring of critical edge-IoT deployments. Pairing MQTT and a durable stream
-broker with a timestamping sidecar and a crash-tolerant outbox, packaged as five
-broker-contingent continuity mechanisms, it adds crash- and overload-resilient delivery
-and closes the observed ordering and silence-liveness gaps at an overhead small relative
-to the second-scale detection latency. Beyond resilient transport, \sys makes evidence
-completeness part of runtime-verification semantics: each verdict is qualified as sound,
-degraded, incomplete, or unavailable, so faults and overload can no longer silently turn
-missing evidence into a false all-clear. Measured against a fault-free oracle through the
-real MonPoly engine, the full fabric preserves all seven injected incidents, whereas the
-shared-log baseline preserves only one and silently misreports the other six as
-all-clears; and each disabled mechanism maps to one specific, measurable class of loss
-(Sect.~\ref{sec:eval}). This explicit, empirically
-validated link between transport continuity and verdict trustworthiness is, we argue, the
-missing resilience layer between mature hierarchical RV logic and its deployment on real
-critical infrastructure.
+security monitoring of critical edge-IoT deployments: five broker-contingent continuity
+mechanisms add crash- and overload-resilient delivery and close the observed ordering and
+silence-liveness gaps, at an overhead small relative to the second-scale detection
+latency. Beyond resilient transport, \sys makes evidence completeness part of
+runtime-verification semantics, so faults and overload can no longer silently turn missing
+evidence into a false all-clear. Measured against a fault-free oracle through the real
+MonPoly engine, the full fabric preserves all seven injected incidents where the
+shared-log baseline preserves one and silently misreports the other six. This explicit,
+empirically validated link between transport continuity and verdict trustworthiness is,
+we argue, the missing resilience layer between mature hierarchical RV logic and its
+deployment on real critical infrastructure.
+
+\subsubsection*{Acknowledgements.}
+This work has received funding from the European Union's Digital Europe Programme under
+grant agreement No~101190251 (CYBERGUARD).
+
+% ---- Disclosure of Interests (Springer requirement) -------------------------
+{\small
+\subsubsection*{Disclosure of Interests.}
+The authors have no competing interests to declare that are relevant to the content of
+this article.
+}
 
 \bibliographystyle{splncs04}
 \bibliography{references}

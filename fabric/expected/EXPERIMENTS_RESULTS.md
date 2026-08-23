@@ -1,4 +1,4 @@
-# RV-Fabric new experiments (CRITIS review response)
+# RV-Fabric experiment results
 
 Real measurements produced against a real NATS JetStream (container `nats:2 -js`)
 using the production `gateway.DurableOutbox` and the production `backend_l3` eid
@@ -160,7 +160,7 @@ isolation, flow control) the shared log lacks, not steady-state ingest loss.
 ---
 
 ## 4. Fault-injected verdict preservation vs a fault-free oracle (`exp_oracle.py`)
-Closes the 4/5->5/5 gap both reviews left open: showing the mechanisms change the
+Shows the mechanisms change the
 SECURITY CONCLUSION, not just message transport. A fixed seeded workload triggers
 all seven properties P3.1-P3.7. The clean stream through the UNMODIFIED MonPoly
 engine (rvhier image, stock specs) + reference detectors for the tick-driven P3.5/

@@ -1,7 +1,7 @@
 # A Resilient Runtime-Verification Fabric for Security Monitoring of Critical Edge-IoT Infrastructure
 
 **Authors.** Nikolaos Kekatos, Marinelio Chintri, Panagiotis Katsaros, Alexios Lekidis, Tom Nianios,
-Ioannis Seitoglou, Anastasios Temperekidis, Stylianos Basagiannis. Submitted to **CRITIS 2026**.
+Ioannis Seitoglou, Anastasios Temperekidis, Stylianos Basagiannis. Accepted at **CRITIS 2026**.
 
 `paper/paper.pdf` is the submitted manuscript (20 pages); `MANIFEST.md` maps every paper element
 (figures, the five guarantees G1-G5, and questions Q1-Q8) to the script that produces it.

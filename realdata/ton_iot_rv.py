@@ -10,6 +10,7 @@ directly — same monitor code as the IoT-23 study, only the front-end differs.
 Usage: python3 ton_iot_rv.py --csv ton_iot/Train_Test_Network.csv --gateways 2 [--max 0]
 """
 import argparse, csv as csvmod, json, os, re
+import hashlib
 from collections import defaultdict, Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -17,6 +18,19 @@ FAILED = {"S0", "REJ", "RSTO", "RSTR", "RSTOS0", "SH", "S1"}
 FANOUT, FLOOD, FLOOD_W, BEACON = 20, 100, 10, 50
 W_SCAN = 60   # port_scan sliding window (s): >=FANOUT distinct failed dsts within W_SCAN
 
+
+
+def _stable_gw(key, gateways, seed=0):
+    """Deterministic gateway assignment.
+
+    Python's builtin hash() is salted per process (PYTHONHASHSEED), so using it
+    here made the gateway partition -- and therefore every cross-gateway (P3.6)
+    count -- irreproducible across runs and machines. md5 is stable everywhere.
+    `seed` exists so the partition can be varied deliberately to check that a
+    result is not an artefact of one particular split.
+    """
+    h = hashlib.md5(f"{seed}:{key}".encode()).hexdigest()
+    return f"gw{(int(h, 16) % gateways) + 1}"
 
 def scan_window(events, W, need):
     """True if any W-second window over the (ts,dst) failed events has >=need
@@ -57,6 +71,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", required=True)
     ap.add_argument("--gateways", type=int, default=2)
+    ap.add_argument("--gw-seed", type=int, default=0,
+                    help="vary the deterministic gateway partition")
     ap.add_argument("--max", type=int, default=0, help="0 = all rows")
     ap.add_argument("--prefix", default="ton_iot")
     a = ap.parse_args()
@@ -70,7 +86,7 @@ def main():
     dst_times = defaultdict(lambda: defaultdict(list))
 
     def gw_of(ip):
-        return f"gw{(hash(ip) % a.gateways) + 1}"
+        return _stable_gw(ip, a.gateways, a.gw_seed)
 
     with open(a.csv, newline="", encoding="utf-8-sig") as f:  # utf-8-sig strips BOM on 'ts'
         r = csvmod.DictReader(f)

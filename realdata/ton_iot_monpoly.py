@@ -11,6 +11,7 @@ p3_6 formula (>=2 distinct gateways). MonPoly output = the formal P3.2/P3.6 firi
 on real data. Writes the two logs; the caller runs monpoly in the rvhier image.
 """
 import argparse, csv, os
+import hashlib
 from collections import defaultdict, Counter
 
 FAILED = {"S0", "REJ", "RSTO", "RSTR", "RSTOS0", "SH", "S1"}
@@ -18,10 +19,25 @@ FANOUT = 20
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
+
+def _stable_gw(key, gateways, seed=0):
+    """Deterministic gateway assignment.
+
+    Python's builtin hash() is salted per process (PYTHONHASHSEED), so using it
+    here made the gateway partition -- and therefore every cross-gateway (P3.6)
+    count -- irreproducible across runs and machines. md5 is stable everywhere.
+    `seed` exists so the partition can be varied deliberately to check that a
+    result is not an artefact of one particular split.
+    """
+    h = hashlib.md5(f"{seed}:{key}".encode()).hexdigest()
+    return f"gw{(int(h, 16) % gateways) + 1}"
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", required=True)
     ap.add_argument("--gateways", type=int, default=2)
+    ap.add_argument("--gw-seed", type=int, default=0,
+                    help="vary the deterministic gateway partition")
     ap.add_argument("--bucket", type=int, default=5, help="subsample: one event per device per N s")
     a = ap.parse_args()
 
@@ -54,7 +70,7 @@ def main():
         return False
 
     scanners = {d for d in failed_ev if scan_window(failed_ev[d], 60, FANOUT)}
-    gw = {d: f"gw{(hash(d) % a.gateways) + 1}" for d in scanners}
+    gw = {d: _stable_gw(d, a.gateways, a.gw_seed) for d in scanners}
 
     # collect (ts, device) subsampled per bucket, rebased to start at 0
     events = []

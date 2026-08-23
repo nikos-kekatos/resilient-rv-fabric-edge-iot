@@ -11,11 +11,25 @@ Usage: python3 wustl_water_rv.py --csv wustl/wustl_iiot_2021.csv --gateways 2 [-
 Emits <prefix>_p32.log / <prefix>_p36.log for the real monpoly engine.
 """
 import argparse, csv, json, os, sys
+import hashlib
 from datetime import datetime
 from collections import defaultdict, Counter
 
 FANOUT, FLOOD, FLOOD_W, BEACON, BEACON_CV, W_SCAN = 20, 100, 10, 50, 0.5, 60
 
+
+
+def _stable_gw(key, gateways, seed=0):
+    """Deterministic gateway assignment.
+
+    Python's builtin hash() is salted per process (PYTHONHASHSEED), so using it
+    here made the gateway partition -- and therefore every cross-gateway (P3.6)
+    count -- irreproducible across runs and machines. md5 is stable everywhere.
+    `seed` exists so the partition can be varied deliberately to check that a
+    result is not an artefact of one particular split.
+    """
+    h = hashlib.md5(f"{seed}:{key}".encode()).hexdigest()
+    return f"gw{(int(h, 16) % gateways) + 1}"
 
 def scan_window(events, W, need):
     """>=need distinct dsts within any W-s window over (ts,dst) failed events."""
@@ -61,6 +75,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", required=True)
     ap.add_argument("--gateways", type=int, default=2)
+    ap.add_argument("--gw-seed", type=int, default=0,
+                    help="vary the deterministic gateway partition")
     ap.add_argument("--max", type=int, default=0)
     ap.add_argument("--prefix", default="wustl_water")
     a = ap.parse_args()
@@ -70,7 +86,7 @@ def main():
     failed_events = defaultdict(list)
     dst_times = defaultdict(lambda: defaultdict(list)); scan_ts = defaultdict(list)
 
-    def gw_of(ip): return f"gw{(hash(ip) % a.gateways) + 1}"
+    def gw_of(ip): return _stable_gw(ip, a.gateways, a.gw_seed)
 
     with open(a.csv, newline="", encoding="utf-8-sig", errors="replace") as f:
         r = csv.DictReader(f)

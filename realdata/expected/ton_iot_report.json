@@ -8,8 +8,8 @@
   "flows": 461043,
   "unique_devices": 11536,
   "devices_per_gateway": {
-    "gw1": 5809,
-    "gw2": 5727
+    "gw1": 5773,
+    "gw2": 5763
   },
   "attacker_devices_gt": 19,
   "structural_attackers_gt (scan/dos/ddos/backdoor)": 11,

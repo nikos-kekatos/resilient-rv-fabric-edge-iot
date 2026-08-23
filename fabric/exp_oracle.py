@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fault-injected verdict preservation against a fault-free oracle (CRITIS 5/5 gap).
 
-Both reviews accept that RV-Fabric's mechanisms *behave as designed*. What neither
+The mechanisms are known to *behave as designed*. What that does not
 experiment yet shows is that those mechanisms change the *security conclusion*: that
 disabling a continuity guarantee turns a real incident into a missed one -- and, in
 particular, into a silent FALSE ALL-CLEAR (an unqualified ``no_violation'') rather
@@ -33,7 +33,7 @@ METHOD (deterministic, real engine, transport-isolating).
      vs evidence): a miss the algebra downgrades to degraded/incomplete/unavailable
      is an honest ``unknown''; a miss it cannot flag is a silent FALSE ALL-CLEAR.
 
-The headline the reviewer asked for: how many otherwise-silent false all-clears the
+The headline result: how many otherwise-silent false all-clears the
 fabric converts into flagged unknowns, and which single mechanism each depends on.
 
 Run:  python3 exp_oracle.py            # uses the rvhier image for real MonPoly
@@ -430,8 +430,9 @@ def main(a):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--workdir", default=os.path.join(
-        "/private/tmp/claude-501/-Users-nikos-Workspace-Projects-Research-rv-rv-3-layer",
-        "4b32761b-519c-4f84-a96e-fddb755cd186", "scratchpad", "oracle"))
+    ap.add_argument("--workdir",
+                    default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                         "_oracle_work"),
+                    help="scratch directory for generated .mlog/.sig inputs")
     ap.add_argument("--md", action="store_true", help="also print markdown tables")
     main(ap.parse_args())

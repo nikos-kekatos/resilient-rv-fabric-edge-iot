@@ -4,7 +4,7 @@ The paper's skew experiment injects offsets onto *recorded* timestamps. These tw
 harnesses instead make the skew enter through the **running system's clocks**, so it
 propagates through the gateway sidecar (`gateway.py:195`, `gw_ts_s = int(time.time())`)
 and into the P3.6 cross-gateway correlation exactly as a real deployment would see
-it. That is the stronger evidence the reviewers asked for.
+it.
 
 ## What is measured
 **Preferred: `measure_eps.py` (dense clock beacons).** Each gateway is mirrored by a

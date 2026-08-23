@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Controlled same-host shared-log vs fabric ingest-loss comparison (CRITIS Q1).
 
-Both reviews' top attack surface: the headline 1.0%->0 loss compares the fabric to
+Motivation: the headline 1.0%->0 loss compares the fabric to
 a shared-log number imported from prior work, not a same-host controlled run. This
-runs the fair comparison the reviewers asked for: ONE fixed trace, the SAME host,
+runs the controlled comparison: ONE fixed trace, the SAME host,
 the SAME load and pacing, the SAME L1 code, only the transport differs, counting
 how many events reach the L1 boundary under each.
 
