@@ -20,8 +20,9 @@ input overflow: String
 input time_anomaly: String
 input fuzzing: String
 
-// T_dev: silence window in seconds. Matches SILENCE_NODE_T in exp_oracle.py.
-constant T_dev: Float64 := 8.0
+// T_dev = 8s, the silence window. RTLola requires a literal duration in
+// aggregate(over:), so the value appears inline below rather than as a constant.
+// It matches SILENCE_NODE_T in exp_oracle.py.
 
 // Any verdict from a node counts as "still reporting".
 output reported(node: String)
@@ -31,13 +32,8 @@ output reported(node: String)
   eval @time_anomaly   when time_anomaly == node with true
   eval @fuzzing        when fuzzing      == node with true
 
-// A node is also watched once it has emitted any non-benign verdict.
-output watched(node: String)
-  spawn with overflow
-  eval @Local(1Hz) with true
-
 trigger(node: String)
   spawn with safe_tx
   eval @Local(1Hz)
-    when reported(node).aggregate(over: T_dev, using: count) == 0
-    with "silent_node_anomaly: {}".format(node)
+    when reported(node).aggregate(over: 8s, using: count) == 0
+    with "silent_node_anomaly"   // the silent node is the trigger instance, printed as #0(<node>)

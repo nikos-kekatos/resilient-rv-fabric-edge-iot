@@ -37,3 +37,25 @@ deliberately randomised per run; its figures are means over five runs, not a fix
 `exp_baseline.py` and `run_crash_exp.sh` read from `/exp` and are container-only. The
 throughput, latency, crash and retention experiments need Mosquitto and NATS JetStream;
 `exp_oracle.py` needs the `rvhier` image for MonPoly.
+
+## Running the RTLola specification
+
+`rtlola_specs/silent_node.lola` (P3.5) needs `rtlola-cli`, which the `rvhier` image
+provides. It can also be run standalone:
+
+```sh
+docker build -t rtlola:cli - <<'DOCKER'
+FROM rust:1-slim
+RUN cargo install rtlola-cli --locked
+ENTRYPOINT []
+DOCKER
+
+rtlola-cli analyze silent_node.lola
+rtlola-cli monitor silent_node.lola --offline relative --csv-in <trace.csv>
+```
+
+The trace is a CSV with a `time` column and one column per input stream
+(`safe_tx,overflow,time_anomaly,fuzzing`), each row naming the device that emitted it.
+On a trace where `d1` reports until t=10 and then stops while `d2` keeps reporting, the
+specification first triggers for `d1` at t=18, i.e. after the full `8s` window, and never
+triggers for `d2`.
