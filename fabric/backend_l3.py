@@ -40,14 +40,16 @@ import threading
 
 import nats
 
-# --- import the REAL L3 engines from the hierarchical prototype ---------------
-# backend_l3.py lives in rv-fabric-impl/, a sibling of hierarchical-rv-rtlola/.
+# --- import the REAL L3 engines ----------------------------------------------
+# correlator_monitor.py is vendored beside this file, so the backend is
+# self-contained. It used to be imported from a sibling checkout of the
+# hierarchical prototype, which existed in the development tree but not in this
+# artefact -- set HIER_RV_DIR to prefer such a checkout if you have one.
 _HERE = os.path.dirname(os.path.abspath(__file__))
-HIER_RV_DIR = os.environ.get(
-    "HIER_RV_DIR",
-    os.path.join(os.path.dirname(os.path.dirname(_HERE)), "hierarchical-rv-rtlola"),
-)
-if HIER_RV_DIR not in sys.path:
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+HIER_RV_DIR = os.environ.get("HIER_RV_DIR")
+if HIER_RV_DIR and HIER_RV_DIR not in sys.path:
     sys.path.insert(0, HIER_RV_DIR)
 
 from correlator_monitor import (  # noqa: E402  (path injected above)
