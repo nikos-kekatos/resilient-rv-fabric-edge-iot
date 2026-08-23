@@ -46,7 +46,16 @@ async def backlog(js):
     return info.state.messages
 
 
-async def has_gap(js):
+async def has_gap(js, watermark=None):
+    """True if the consumer can prove evidence is missing.
+
+    An interior hole is visible from the delivered ids alone. A *truncated suffix*
+    is not: if the tail of a device's stream never arrives, the ids that did arrive
+    are still contiguous, and a device whose every event was dropped leaves no trace
+    at all. Both need the gateway's per-device high-water mark, which the gateway
+    publishes on the tick subject; pass it as `watermark` ({(gw,dev): last_seq}).
+    Without it this can only report interior holes.
+    """
     sub = await js.pull_subscribe(SUBJ, durable="chk")
     seqs = {}
     for _ in range(200):
@@ -61,7 +70,14 @@ async def has_gap(js):
             await m.ack()
     for v in seqs.values():
         if v and (max(v) - min(v) + 1) != len(v):
-            return True
+            return True                       # interior hole
+    if watermark:
+        for k, hi in watermark.items():
+            v = seqs.get(k)
+            if not v:
+                return True                   # device never appeared downstream
+            if max(v) < hi:
+                return True                   # truncated suffix
     return False
 
 

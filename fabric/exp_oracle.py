@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fault-injected verdict preservation against a fault-free oracle (CRITIS 5/5 gap).
 
-The mechanisms are known to *behave as designed*. What that does not
+Both reviews accept that RV-Fabric's mechanisms *behave as designed*. What neither
 experiment yet shows is that those mechanisms change the *security conclusion*: that
 disabling a continuity guarantee turns a real incident into a missed one -- and, in
 particular, into a silent FALSE ALL-CLEAR (an unqualified ``no_violation'') rather
@@ -12,7 +12,7 @@ METHOD (deterministic, real engine, transport-isolating).
      monitored properties P3.1-P3.7 genuinely fire (Sect. workload below).
   2. ORACLE. The clean alert stream is fed to the UNMODIFIED MonPoly engine
      (the ``rvhier'' image, /usr/local/bin/monpoly, stock specs in
-     mounted from fabric/monpoly_specs) for P3.1-P3.4 and P3.6, and to
+     /app/monpoly_specs) for the log-driven properties P3.1-P3.4 and P3.6, and to
      reference detectors that mirror backend_l3's tick-driven P3.5 / P3.7. The set
      of incidents it produces is the ground truth I*.
   3. FAULT CAMPAIGN. One combined campaign -- a crash, a reordering, node and
@@ -33,7 +33,7 @@ METHOD (deterministic, real engine, transport-isolating).
      vs evidence): a miss the algebra downgrades to degraded/incomplete/unavailable
      is an honest ``unknown''; a miss it cannot flag is a silent FALSE ALL-CLEAR.
 
-The headline result: how many otherwise-silent false all-clears the
+The headline the reviewer asked for: how many otherwise-silent false all-clears the
 fabric converts into flagged unknowns, and which single mechanism each depends on.
 
 Run:  python3 exp_oracle.py            # uses the rvhier image for real MonPoly
@@ -152,6 +152,53 @@ CONFIGS = {
 # 3. Apply the combined fault campaign to the clean workload under a config,
 #    returning the alert stream (in arrival order) that actually reaches L3.
 # ---------------------------------------------------------------------------
+def assign_eids(clean):
+    """Stamp each event with the gateway-assigned per-device sequence number, and
+    return the per-(gw,device) high-water mark the gateway reached.
+
+    This mirrors gateway.DurableOutbox: the eid <gw,device,seq> is assigned at the
+    gateway, before the hop that can lose it, so the *sender's* last seq is known
+    independently of what arrives. The gateway publishes that high-water mark on the
+    tick, which is what makes a lost *suffix* observable: an interior hole shows up
+    as a discontinuity, but a truncated tail only shows up against the watermark.
+    """
+    seq, watermark = {}, {}
+    for e in clean:
+        k = (e["gw"], e["dev"])
+        n = seq.get(k, -1) + 1
+        seq[k] = n
+        e["seq"] = n
+        watermark[k] = n
+    return watermark
+
+
+def observe_gap(delivered, watermark, c):
+    """Return True if the consumer can *prove* evidence is missing.
+
+    Three observable signatures, all requiring event ids (the shared log has none):
+      (a) interior discontinuity  -- a hole between two delivered ids;
+      (b) truncated suffix        -- highest delivered id below the gateway watermark;
+      (c) silent device           -- a device the gateway sequenced but that never
+                                     appears downstream at all.
+    (b) and (c) are the cases a max-min-length check alone cannot see.
+    """
+    if not c["eids"]:
+        return False
+    seen = {}
+    for e in delivered:
+        if "seq" in e:
+            seen.setdefault((e["gw"], e["dev"]), set()).add(e["seq"])
+    for k, hi in watermark.items():
+        v = seen.get(k)
+        if not v:
+            return True                              # (c) device vanished
+        if (max(v) - min(v) + 1) != len(v):
+            return True                              # (a) interior hole
+        if max(v) < hi:
+            return True                              # (b) truncated suffix
+    return False
+
+
 def apply_faults(clean, c):
     """Return (arrival_ordered_alerts, notes) after the campaign, per config caps."""
     notes = {}
@@ -313,18 +360,21 @@ def detect_gw_silence(clean, c):
 # 6. Evidence-aware algebra: classify a MISS as flagged (honest unknown) or a
 #    silent false all-clear, from the fabric state a real consumer would observe.
 # ---------------------------------------------------------------------------
-def classify_miss(incident, c, notes):
+def classify_miss(incident, c, notes, delivered=None, watermark=None):
     """Return the completeness status the algebra assigns to the window of a MISSED
     incident. A flagged status (degraded/incomplete/unavailable) means the operator
-    sees ``unknown'', not a false all-clear. 'sound' on a miss = false all-clear."""
-    # Delivery loss (crash / overload eviction) shows up as an event-id gap IFF the
-    # transport carries event ids. The shared log has none -> the loss is invisible.
-    loss_here = (
-        (incident == "I5_P3.4_persistent" and "crash" in notes) or
-        (incident == "I1_P3.2_botnet" and "overload" in notes)
-    )
-    if loss_here and c["eids"]:
-        return "incomplete"          # event-id discontinuity -> flagged
+    sees ``unknown'', not a false all-clear. 'sound' on a miss = false all-clear.
+
+    The delivery cases are *computed* from the stream the consumer actually saw,
+    against the gateway's per-device watermark (see observe_gap), rather than
+    asserted per incident: a miss is only downgraded if the loss left a signature
+    the consumer can point at.
+    """
+    # Delivery loss (crash / overload eviction): flagged iff the consumer can
+    # observe it -- interior hole, truncated suffix, or a device that never arrived.
+    if delivered is not None and watermark is not None:
+        if observe_gap(delivered, watermark, c):
+            return "incomplete"
     # Reorder: detectable as a gateway-time order violation IFF a trusted order
     # reference exists (the fabric's sidecar). The shared log cannot tell.
     if incident == "I3_P3.1_apt" and "reorder" in notes and c["G2"] == 0 and c["gw"]:
@@ -354,7 +404,7 @@ def detect_config(name, c, clean, work_dir):
 
 
 def write_logs(name, c, clean, work_dir):
-    A, notes = apply_faults(clean, c)
+    A, notes = apply_faults(clean, c)   # A = what the consumer actually receives
     mlog, dropped = to_monpoly_log(A)
     for inc, (_sig, formula, _id, _k) in MONPOLY_SPECS.items():
         spec = formula[:-6]
@@ -367,7 +417,7 @@ def write_logs(name, c, clean, work_dir):
             data = mlog
         with open(os.path.join(work_dir, "streams", f"{name}__{spec}.mlog"), "w") as f:
             f.write(data)
-    return notes, dropped
+    return notes, A, dropped
 
 
 def main(a):
@@ -376,10 +426,12 @@ def main(a):
     os.makedirs(os.path.join(work, "out"), exist_ok=True)
 
     clean = build_workload()
-    all_notes = {}
+    watermark = assign_eids(clean)      # gateway-assigned per-device high-water marks
+    all_notes, all_delivered = {}, {}
     for name, c in CONFIGS.items():
-        notes, _ = write_logs(name, c, clean, work)
+        notes, delivered, _ = write_logs(name, c, clean, work)
         all_notes[name] = notes
+        all_delivered[name] = delivered
 
     run_monpoly_batch(work)
 
@@ -393,7 +445,8 @@ def main(a):
         detected = {i for i, v in det.items() if v}
         missed = sorted(oracle - detected)
         spurious = sorted(detected - oracle)
-        tags = {i: classify_miss(i, c, all_notes[name]) for i in missed}
+        tags = {i: classify_miss(i, c, all_notes[name],
+                                 all_delivered[name], watermark) for i in missed}
         false_all_clears = [i for i in missed if tags[i] == "sound"]
         downgraded = [i for i in missed if tags[i] != "sound"]
         rows.append({
@@ -431,9 +484,8 @@ def main(a):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--workdir",
-                    default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                         "_oracle_work"),
-                    help="scratch directory for generated .mlog/.sig inputs")
+    ap.add_argument("--workdir", default=os.path.join(
+        "/private/tmp/claude-501/-Users-nikos-Workspace-Projects-Research-rv-rv-3-layer",
+        "4b32761b-519c-4f84-a96e-fddb755cd186", "scratchpad", "oracle"))
     ap.add_argument("--md", action="store_true", help="also print markdown tables")
     main(ap.parse_args())

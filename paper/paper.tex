@@ -908,14 +908,14 @@ classes, stressing correlation over many identities). Per-identity detection
 (precision/recall, untuned) is $0.83/0.83$ (WUSTL) and $0.64/0.47$ (TON\_IoT); dedicated
 detectors (e.g.\ BATADAL~\cite{taormina2018battle}) score higher. Driving the \emph{real}
 MonPoly engine, the coordinated \textbf{P3.2} schema fires $2$/$11$ episodes and the
-cross-gateway \textbf{P3.6} $17$/$154$ (WUSTL/TON\_IoT), at up to three coordinated sources
+cross-gateway \textbf{P3.6} $1$/$168$ (WUSTL/TON\_IoT), at up to three coordinated sources
 across two gateways, validating the fleet properties on labelled multi-source traffic.
 Application-layer classes (injection, XSS, ransomware, MITM) need content-level
 specifications and are out of scope. These counts are \emph{episodes} (consecutive
 satisfaction timepoints collapsed), so they are distinct coordinated events rather than
-per-timepoint alerts. P3.6's count depends on the synthetic
-partition and is reported for the fixed one released with the artefact; P3.2, quantifying
-over devices, does not.
+per-timepoint alerts. P3.6's count depends on how the synthetic
+partition places identities across gateways and should be read as partition-specific;
+P3.2, quantifying over devices, does not.
 
 % ============================================================================
 \section{Related Work}

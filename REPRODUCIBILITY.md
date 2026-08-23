@@ -19,9 +19,10 @@ under the stable one). The `expected/*.json` files here are regenerated with the
 partition.
 
 **What remains partition-sensitive:** the MonPoly *episode* counts for the cross-gateway
-property P3.6. The paper states this in Sect. 8: P3.6's count is reported for the fixed
-partition released here, while P3.2, which quantifies over devices rather than gateways,
-does not depend on it. P3.6 asks whether an alert appears at two distinct gateways inside one
+property P3.6, since it asks whether an alert appears at two *distinct* gateways. P3.2,
+quantifying over devices, does not depend on the partition. Both are counted by
+`realdata/episodes.py`; the values for the shipped partition are recorded in
+`realdata/expected/EPISODES.md`. P3.6 asks whether an alert appears at two distinct gateways inside one
 window, so how many episodes it yields depends on which identities land where. Treat those
 counts as specific to the shipped partition (`--gw-seed 0`), and vary `--gw-seed` to check
 that a conclusion is not an artefact of one split.
