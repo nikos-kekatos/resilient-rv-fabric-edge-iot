@@ -1,0 +1,23 @@
+# P3.1: Multi-Vector APT Detection
+#
+# Formal Specification (MFOTL):
+#   apt_indicator(d, t) ←
+#     (◇[0,60] overflow(d) ∧ ◇[0,60] time_anomaly(d)) ∨
+#     (◇[0,60] overflow(d) ∧ ◇[0,60] fuzzing(d)) ∨
+#     (◇[0,60] time_anomaly(d) ∧ ◇[0,60] fuzzing(d))
+#
+# Equivalent (Mathematical Logic):
+#   ∃t₁, t₂. (t-60 ≤ t₁ ≤ t) ∧ (t-60 ≤ t₂ ≤ t) ∧
+#     ((overflow(d, t₁) ∧ time_anomaly(d, t₂)) ∨
+#      (overflow(d, t₁) ∧ fuzzing(d, t₂)) ∨
+#      (time_anomaly(d, t₁) ∧ fuzzing(d, t₂)))
+#
+# Semantics: Device d exhibits at least 2 different attack types
+#            within 60 seconds → flag as APT indicator
+
+# MonPoly formula (direct MFOTL with free variable d for output)
+# Detects if device d shows 2+ different attack types within 60s
+# Free variable d will appear in MonPoly output: @ts. (...): (device_name)
+( (ONCE[0,60] overflow(d, _)) AND (ONCE[0,60] time_anomaly(d, _)) ) OR
+( (ONCE[0,60] overflow(d, _)) AND (ONCE[0,60] fuzzing(d, _)) ) OR
+( (ONCE[0,60] time_anomaly(d, _)) AND (ONCE[0,60] fuzzing(d, _)) )

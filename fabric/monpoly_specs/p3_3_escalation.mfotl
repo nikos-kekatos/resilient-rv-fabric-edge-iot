@@ -1,0 +1,25 @@
+# P3.3: Attack Escalation Pattern
+# Detects devices that transition from normal to malicious behavior
+#
+# Formal Specification (MFOTL):
+#   escalation_pattern(d, t) ←
+#     ◇[10,60] safe_tx(d) ∧
+#     ◇[0,50] overflow(d) ∧
+#     ◇[0,50] time_anomaly(d)
+#
+# Equivalent (Mathematical Logic):
+#   ∃t₁, t₂, t₃.
+#     (t-60 ≤ t₁ ≤ t-10) ∧    # safe_tx was 10-60s ago
+#     (t-50 ≤ t₂ ≤ t) ∧       # overflow in last 50s
+#     (t-50 ≤ t₃ ≤ t) ∧       # time_anomaly in last 50s
+#     safe_tx(d, t₁) ∧ overflow(d, t₂) ∧ time_anomaly(d, t₃)
+#
+# Semantics: Device was normal (safe_tx 10-60s ago) AND now shows
+#            concurrent attacks (overflow + time_anomaly) → escalation
+
+# MonPoly formula (direct MFOTL with free variable d)
+# Device was safe 10-60s ago AND now shows concurrent attacks
+# Free variable d will appear in output: @ts. (...): (device_name)
+(ONCE[10,60] safe_tx(d, _)) AND
+(ONCE[0,50] overflow(d, _)) AND
+(ONCE[0,50] time_anomaly(d, _))

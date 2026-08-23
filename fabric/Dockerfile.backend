@@ -8,6 +8,8 @@ FROM rvhier:latest
 RUN pip install --no-cache-dir nats-py paho-mqtt
 COPY backend_l3.py /app/backend_l3.py
 COPY crossgw_specs /app/crossgw_specs
+COPY monpoly_specs /app/monpoly_specs
+COPY rtlola_specs  /app/rtlola_specs
 ENV HIER_RV_DIR=/app
 WORKDIR /app
 CMD ["python3", "backend_l3.py"]

@@ -1,0 +1,16 @@
+# P3.4: Persistent Campaign Detection
+#
+# Formal Specification (MFOTL):
+#   persistent_threat(cnt, d, t) ←
+#     cnt := CNT ts. ◇[0,3600] overflow(d, ts);
+#     cnt ≥ 5
+#
+# Equivalent (Mathematical Logic):
+#   cnt = |{ts | (t-3600 ≤ ts ≤ t) ∧ overflow(d, ts)}| ∧ cnt ≥ 5
+#
+# Semantics: Device d performs at least 5 overflow attacks within
+#            the last hour (3600 seconds) → flag as persistent threat
+#
+# MonPoly formula with CNT aggregation (free variables: cnt, d)
+
+(cnt <- CNT ts; d ONCE[0,3600] overflow(d, ts)) AND cnt >= 5

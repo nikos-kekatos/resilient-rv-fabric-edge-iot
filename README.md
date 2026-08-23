@@ -47,7 +47,9 @@ artifact/
 │   ├── exp_baseline.py            Q1 — controlled shared-log vs fabric baseline
 │   ├── bench_wan.py               Q2 — per-hop latency under netem WAN delay
 │   ├── bench_scale.py/bench_fleet.py  Q3 — throughput and fleet scale
-│   ├── crossgw_specs/             MonPoly spec for cross-gateway P3.6
+│   ├── monpoly_specs/            MonPoly signature + P3.1–P3.4 formulas
+│   ├── rtlola_specs/             RTLola silent-node (P3.5) specification
+│   ├── crossgw_specs/            MonPoly spec for cross-gateway P3.6
 │   ├── clockskew/                 §6 two-host clock-skew (P3.6) — see clockskew/DISTRIBUTED.md
 │   └── expected/                  reference outputs (oracle_results.json, EXPERIMENTS_RESULTS.md)
 └── realdata/                 ← real-data validation (§7)
@@ -64,14 +66,18 @@ artifact/
 
 - **Docker** (tested with 28.1) and **Docker Compose v2**.
 - **Python ≥ 3.10** with `pip install -r fabric/requirements.txt` (`paho-mqtt`, `nats-py`).
-- **The `rvhier:latest` base image** — provides the `monpoly` and `rtlola-cli` binaries and
-  the monitor specs (P3.1–P3.5). Build it once from the monitor repo (heavy: compiles MonPoly
-  via opam + RTLola via cargo):
+- **The `rvhier:latest` base image** — provides the `monpoly` and `rtlola-cli` *binaries*
+  (heavy: compiles MonPoly via opam and RTLola via cargo). Build it once:
   ```bash
-  docker build -t rvhier:latest ../../hierarchical-rv-rtlola
+  git clone https://github.com/nikos-kekatos/hybrid-hierarchical-rv-edge-iot.git
+  docker build -t rvhier:latest -f fabric/Dockerfile.rvbase \
+      hybrid-hierarchical-rv-edge-iot/code
   ```
-  > This is the **one external dependency**. `backend_l3.py`, `exp_oracle.py`, and
-  > `ton_iot_monpoly.py` shell out to the real `monpoly` binary from this image.
+  > This is the **one external dependency**, and it supplies binaries only. The monitor
+  > specifications are vendored here in `fabric/monpoly_specs/` and `fabric/rtlola_specs/`
+  > and are mounted into the container at run time, so the image does not need to carry
+  > them. `backend_l3.py`, `exp_oracle.py` and `ton_iot_monpoly.py` shell out to the real
+  > `monpoly` binary from this image.
 - **Datasets** for §7 are not bundled (size/licensing). See `realdata/DOWNLOAD.md`.
 
 Hardware used in the paper: a single laptop (Apple M4 Pro, 12 cores, 24 GB RAM) for the
@@ -87,7 +93,7 @@ The paper's central result (`shared log 1/7 vs fabric 7/7`) is fully reproducibl
 command, using the real MonPoly engine:
 
 ```bash
-docker build -t rvhier:latest ../../hierarchical-rv-rtlola   # once
+# build rvhier:latest once (see Requirements above)
 cd fabric
 python3 exp_oracle.py --md
 ```

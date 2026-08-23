@@ -12,7 +12,7 @@ METHOD (deterministic, real engine, transport-isolating).
      monitored properties P3.1-P3.7 genuinely fire (Sect. workload below).
   2. ORACLE. The clean alert stream is fed to the UNMODIFIED MonPoly engine
      (the ``rvhier'' image, /usr/local/bin/monpoly, stock specs in
-     /app/monpoly_specs) for the log-driven properties P3.1-P3.4 and P3.6, and to
+     mounted from fabric/monpoly_specs) for P3.1-P3.4 and P3.6, and to
      reference detectors that mirror backend_l3's tick-driven P3.5 / P3.7. The set
      of incidents it produces is the ground truth I*.
   3. FAULT CAMPAIGN. One combined campaign -- a crash, a reordering, node and
@@ -47,7 +47,7 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SPEC_DIR_LOCAL = os.path.join(os.path.dirname(HERE), "hierarchical-rv-rtlola", "monpoly_specs")
+SPEC_DIR_LOCAL = os.path.join(HERE, "monpoly_specs")   # vendored; mounted into the image
 CROSSGW_DIR_LOCAL = os.path.join(HERE, "crossgw_specs")
 IMAGE = os.environ.get("RVHIER_IMAGE", "rvhier:latest")
 
@@ -253,6 +253,7 @@ done
         ["docker", "run", "--rm",
          "-v", f"{work_dir}:/work",
          "-v", f"{CROSSGW_DIR_LOCAL}:/app/crossgw_specs:ro",
+         "-v", f"{SPEC_DIR_LOCAL}:/app/monpoly_specs:ro",
          IMAGE, "bash", "-c", script],
         check=True,
     )

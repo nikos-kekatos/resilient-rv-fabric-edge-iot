@@ -29,6 +29,8 @@ run instructions.
 | File                                | Role                                       |
 |-------------------------------------|--------------------------------------------|
 | `fabric/canonicaliser.py`           | L1 canonicalisation filter (used by baseline) |
+| `fabric/monpoly_specs/{signature.sig,p3_1_apt,p3_2_botnet,p3_3_escalation,p3_4_persistent}.mfotl` | MonPoly signature + the fleet formulas P3.1–P3.4 |
+| `fabric/rtlola_specs/silent_node.lola` | RTLola time-triggered silent-node specification (P3.5) |
 | `fabric/crossgw_specs/{crossgw.sig,p3_6_crossgw.mfotl}` | MonPoly signature + formula for cross-gateway P3.6 |
 | `fabric/mosquitto/mosquitto.conf`   | MQTT broker config                         |
 | `fabric/Dockerfile.{backend,node,bench,rvbase}` | container images (backend `FROM rvhier:latest`) |
@@ -38,7 +40,8 @@ run instructions.
 
 ## External dependency (not bundled)
 
-- **`rvhier:latest`** Docker image — built from the monitor repo
-  `../../hierarchical-rv-rtlola`; provides the `monpoly` + `rtlola-cli` binaries and the
-  P3.1–P3.5 specs. Required by `backend_l3.py`, `exp_oracle.py`, `ton_iot_monpoly.py`.
+- **`rvhier:latest`** Docker image — provides the `monpoly` + `rtlola-cli` **binaries**
+  only; build it from https://github.com/nikos-kekatos/hybrid-hierarchical-rv-edge-iot
+  (see README). The specs themselves are vendored in this repo. Required by
+  `backend_l3.py`, `exp_oracle.py`, `ton_iot_monpoly.py`.
 - **Datasets** — WUSTL-IIoT-2021 and TON_IoT (see `realdata/DOWNLOAD.md`).

@@ -1,0 +1,17 @@
+# P3.2: Coordinated Attack Detection (Botnet)
+#
+# Formal Specification (MFOTL):
+#   coordinated_attack(cnt, t) ←
+#     cnt := CNT d. ◇[0,30] overflow(d);
+#     cnt ≥ 3
+#
+# Equivalent (Mathematical Logic):
+#   cnt = |{d | ∃t'. (t-30 ≤ t' ≤ t) ∧ overflow(d, t')}| ∧ cnt ≥ 3
+#
+# Semantics: At least 3 distinct devices perform overflow attacks
+#            within 30 seconds → flag as coordinated botnet attack
+
+# MonPoly formula with CNT aggregation
+# Counts distinct devices with overflow in last 30s
+# Free variable: (cnt)
+(cnt <- CNT d; ONCE[0,30] overflow(d, _)) AND cnt >= 3

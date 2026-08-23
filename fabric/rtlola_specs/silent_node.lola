@@ -1,0 +1,14 @@
+input overflow: String
+input safe_tx: String
+
+output matches(node: String)
+  spawn with overflow
+  eval @safe_tx when safe_tx == node with true
+  close @Local(0.2Hz) when true
+
+trigger(node: String)
+  spawn with overflow
+  eval @Local(0.2Hz)
+    when matches(node).aggregate(over: 5s, using: count) == 0
+    with "silent_node_anomaly: {{}}".format(node)
+  close @Local(0.2Hz) when true
