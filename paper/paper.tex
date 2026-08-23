@@ -5,7 +5,7 @@
 %
 %  CAMERA-READY: named authors + ORCIDs, acknowledgement and disclosure of interests
 %  restored, self-citations de-anonymised. Build: tectonic main.tex
-%  All numbers are measured; see the artefact repository.
+%  All numbers are measured; see this artefact repository.
 % =============================================================================
 \documentclass[runningheads]{llncs}
 
@@ -411,8 +411,8 @@ forge a broker-authenticated identity.
 \centering
 \caption{Threat model: for each adversary capability, the \sys mitigation, the
 continuity mechanism (G1--G5, Sect.~\ref{sec:guarantees}) or monitored property (P3.x)
-that mitigation uses, and the residual risk. Rows marked $\dagger$ lie outside the
-trust boundary (assumed, not enforced).}
+it uses, and the residual risk. Entries marked $\dagger$ lie outside the trust boundary
+(assumed, not enforced).}
 \label{tab:threat}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
@@ -619,8 +619,8 @@ hierarchical design under study~\cite{ares2026,csr2026} unmodified. L1/L2 are
 lightweight; L3 is the hybrid of MonPoly~\cite{monpoly} for metric first-order
 correlation and RTLola~\cite{rtlola} for the time-triggered silent-node property, the
 latter driven by the fabric's 1\,Hz tick subject. Because only the transport beneath them
-changes, the specification logic is unchanged, its temporal interpretation anchored to the
-gateway-ingest timeline, so an operator adopts \sys without rewriting specifications.
+changes, the specification logic is unchanged, anchored to the gateway-ingest
+timeline, so an operator adopts \sys without rewriting specifications.
 
 \paragraph{Deployment topology.}
 L1 runs at the edge; each gateway node runs an L1/L2 consumer and a sidecar over a
@@ -698,8 +698,7 @@ load queues rather than drops (p95 rising to $\sim$1\,s: flow control defers los
 Emulated fleets of $250/500/1000$ devices ($\approx$2\,msg/s each) all sustain
 \emph{zero loss}; at $1000$ devices the $\approx$1930\,msg/s aggregate runs at
 $\sim$60\,ms p95. This validates the message-handling path at fleet scale, not the
-resource limits of $1000$ physical devices; read capacity scales further via more L3
-consumers.
+resource limits of $1000$ physical devices; read capacity scales with more L3 consumers.
 
 \paragraph{Detection (Q4).}
 An eight-device, two-gateway workload (mixed overflow/APT/spam/time-spoof/clean) over
@@ -708,8 +707,8 @@ incidents), including the fabric-dependent ones: cross-device \textbf{P3.2} and
 cross-gateway \textbf{P3.6} need the backend fleet view and per-consumer cursors (P3.6 is
 unobservable single-gateway), and time-triggered \textbf{P3.5} surfaces only because the
 tick drives polling under silence. Taking one gateway dark mid-run, \textbf{P3.7} flags
-gateway-stream loss within $T_{\mathrm{gw}}{=}10$\,s, distinct from an individual device
-going quiet (though not identifying the cause).
+gateway-stream loss within $T_{\mathrm{gw}}{=}10$\,s, distinct from a single device going
+quiet (though not identifying the cause).
 
 \paragraph{Clock-skew resilience of P3.6 (Q4, two independent hosts).}
 We validate P3.6's skew resilience on \emph{two independent machines} (cloud VMs, separate
@@ -804,7 +803,7 @@ transport. This is a controlled causal experiment across the seven property clas
 a statistically representative benchmark.
 Each missed incident is labelled by the algebra of Sect.~\ref{sec:guarantees} from the
 state a consumer observes: a miss downgraded to \textsf{incomplete} surfaces as an honest
-\emph{unknown}, one it cannot flag as a silent \emph{false all-clear}.
+\emph{unknown}, one it cannot flag as a \emph{false all-clear}.
 
 Table~\ref{tab:oracle} reports the outcome. Every one of the shared log's six misses is a
 silent false all-clear: it cannot express the gateway-scoped P3.6/P3.7, has no tick for
@@ -857,8 +856,8 @@ $-$G5 flow       & $6/7$ & $1$ & $0$ & $1$ (eid gap) \\
 Re-running the public implementation on a \emph{fresh single host} with native brokers
 reproduces the qualitative claims with $95\%$ CIs: $0\%$ loss at $250/500/1000$ devices
 ($1997\pm20$\,msg/s, $p95$ $121\pm6$\,ms at $1000$), saturation near $7$k\,msg/s, isolation
-$\sim$208$\times$, and the crash result \emph{exactly}. Absolute figures are host-dependent; the
-re-execution establishes reproducibility of the \emph{behaviour}.
+$\sim$208$\times$, and the crash result \emph{exactly}. Absolute figures are host-dependent; the re-execution establishes
+reproducibility of the \emph{behaviour}, not of the numbers.
 
 \paragraph{Capacity bounds for scale-out.}
 The testbed is lab-scale, so we state the measured figures as \emph{bounds a larger
@@ -914,7 +913,9 @@ across two gateways, validating the fleet properties on labelled multi-source tr
 Application-layer classes (injection, XSS, ransomware, MITM) need content-level
 specifications and are out of scope. These counts are \emph{episodes} (consecutive
 satisfaction timepoints collapsed), so they are distinct coordinated events rather than
-per-timepoint alerts.
+per-timepoint alerts. P3.6's count depends on the synthetic
+partition and is reported for the fixed one released with the artefact; P3.2, quantifying
+over devices, does not.
 
 % ============================================================================
 \section{Related Work}
@@ -1002,15 +1003,14 @@ $95\%$ intervals in Sect.~\ref{sec:eval}.
 \sys turns a single-host, shared-log RV prototype into a resilient delivery layer for
 security monitoring of critical edge-IoT deployments: five broker-contingent continuity
 mechanisms add crash- and overload-resilient delivery and close the observed ordering and
-silence-liveness gaps, at an overhead small relative to the second-scale detection
-latency. Beyond resilient transport, \sys makes evidence completeness part of
-runtime-verification semantics, so faults and overload can no longer silently turn missing
-evidence into a false all-clear. Measured against a fault-free oracle through the real
-MonPoly engine, the full fabric preserves all seven injected incidents where the
-shared-log baseline preserves one and silently misreports the other six. This explicit,
-empirically validated link between transport continuity and verdict trustworthiness is,
-we argue, the missing resilience layer between mature hierarchical RV logic and its
-deployment on real critical infrastructure.
+silence-liveness gaps, at an overhead small relative to second-scale detection. Beyond
+resilient transport, \sys makes evidence completeness part of runtime-verification
+semantics, so faults and overload can no longer silently turn missing evidence into a false
+all-clear: against a fault-free oracle through the real MonPoly engine, the full fabric
+preserves all seven injected incidents where the shared log preserves one and silently
+misreports the other six. This explicit, empirically validated link between transport
+continuity and verdict trustworthiness is, we argue, the missing resilience layer between
+mature hierarchical RV logic and its deployment on real critical infrastructure.
 
 \subsubsection*{Acknowledgements.}
 This work has received funding from the European Union's Digital Europe Programme under
