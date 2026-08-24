@@ -5,5 +5,7 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y --no-install-recommends iproute2 \
     && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir paho-mqtt nats-py
-COPY bench.py /bench.py
+# bench_wan.py is the Q2 latency probe this image exists for; bench.py is the
+# colocated throughput probe. Both are copied so the image is self-contained.
+COPY bench.py bench_wan.py /
 ENTRYPOINT ["/bin/sh","-c"]

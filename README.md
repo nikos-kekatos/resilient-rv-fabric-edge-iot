@@ -31,19 +31,25 @@ validation (§8: identity counts, precision/recall, and the P3.2/P3.6 episode co
 run against the real MonPoly and RTLola engines and, where brokers are needed, against real
 Mosquitto and NATS JetStream.
 
-**Present as code, but with no recorded output here** — the per-event latency sweep (Q2), the
-two-host clock-skew sweep, and the "independent re-execution" figures. Q2 needs Linux `netem`
-(`--cap-add NET_ADMIN`); the skew sweep creates and then destroys two cloud VMs, so the
-infrastructure does not survive its own run (a single-host `libfaketime` variant,
-`clockskew/run_skew_faketime.sh`, needs no cloud).
+**Host-dependent, so recorded on a second host rather than shipped as golden files** — the
+per-hop latency sweep (Q2), the throughput and fleet-scale numbers (Q3), the detection run
+(Q4) and the Table 2 G2 order-violation counter. Each now has a reference file recording what
+was measured, what the invariant is, and what should move with the host:
 
-Two of these have since been recorded, on a *different* host than the paper:
-`fabric/expected/q3_scale_fleet.md` (Q3 saturation and fleet sweep, needs only NATS) and
-`fabric/expected/q4_fullstack_g2.md` (Q4 detection through the real engines plus the Table 2
-G2 order-violation counter). Q4 is unseeded *by design* — `device_publisher.py` seeds from
-`os.urandom(16)` — so that file is one sample to compare in shape, not a golden file. The scripts are included; the results in
-the paper were measured on hosts and networks this repository cannot recreate, and are
-host-dependent by nature.
+| Experiment | Recorded in | Needs |
+|---|---|---|
+| Q2 latency | `fabric/expected/q2_netem_latency.md` | Linux `netem`, `--cap-add NET_ADMIN` |
+| Q3 throughput / fleet | `fabric/expected/q3_scale_fleet.md` | NATS only |
+| Q4 detection + G2 | `fabric/expected/q4_fullstack_g2.md` | full stack, `rvhier:latest` |
+| Two-host clock skew | `fabric/clockskew/EXPECTED.md` | two hosts (cloud, Lima, or `libfaketime`) |
+
+Read these for **shape, not digits**: Q2's claim is a ratio (MQTT QoS 1 ≈ 3× the round trip,
+JetStream ≈ 1×), Q3's is a saturation plateau at zero loss, G2's is that gateway-order
+violations stay at **0**, and the skew claim is that P3.6 holds while ε < W and flips beyond.
+Q4 is unseeded *by design* — `device_publisher.py` seeds from `os.urandom(16)` — so its file is
+one sample, never a diff target. The two-host skew harnesses destroy their hosts on exit, which
+is why no run artefact from them can be shipped. The `"independent re-execution"` figures
+remain unrecorded.
 
 **Modelled rather than executed** — `exp_oracle.py` applies its fault campaign at the
 *alert* level, deriving each fault from the measured behaviour of Q6/Q7, rather than
@@ -161,7 +167,7 @@ docker compose up -d mosquitto nats           # brokers only (for exp_isolation/
 | Paper element        | Command (in `fabric/`)                                  | Expected result |
 |----------------------|----------------------------------------------------------|-----------------|
 | **Q1** baseline (§7) | `docker compose up -d mosquitto` then `EXP_ROOT="$PWD" python3 exp_baseline.py --n 7000 --rate 500 --trials 5` (and `--rate 3000`). The script generates its own seeded trace into `expdata/`; from inside the compose network add `--broker mosquitto` | **0/7000 loss** on both shared-log and fabric at 500 & 3000 msg/s (the ~1% prior figure does not reproduce). |
-| **Q2** latency (§7)  | `python3 bench_wan.py` + `tc qdisc add dev <if> root netem delay 5ms` | MQTT hop ≈ 3δ (17/32/60 ms at δ=5/10/20 ms); JetStream ≈ δ (7/13/23 ms); p95 < 75 ms. |
+| **Q2** latency (§7)  | `docker build -t wanbench -f Dockerfile.bench .` then run it with `--cap-add NET_ADMIN` and `tc qdisc replace dev eth0 root netem delay <δ>ms; python3 /bench_wan.py` (the broker images carry no `tc`; shape their netns from a sidecar with `--net container:<broker>`) | MQTT hop ≈ 3δ (17/32/60 ms at δ=5/10/20 ms); JetStream ≈ δ (7/13/23 ms); p95 < 75 ms. Reproduced — the **ratio** is the claim (MQTT ≈ 3.2× RTT, JetStream ≈ 1.4× RTT); see `expected/q2_netem_latency.md`, which also explains why δ means RTT≈δ one-sided but RTT≈2δ symmetric. |
 | **Q3** throughput (§7)| `docker compose up -d nats` then `python3 bench_scale.py` ; `python3 bench_fleet.py` | saturation ~10.7K→14K msg/s at 0 loss; fleets 250/500/1000 devices at 0 loss, ~60 ms p95. Reproduced on a second host (~10.9K plateau, 0.00% loss at all three fleet sizes) — see `expected/q3_scale_fleet.md`. |
 | **Q5** isolation, G4 (Table 2) | `python3 exp_isolation.py --n 2000 --delay 0.02`| fast consumer **0.043 s ± 0.001** vs slow peer processed **3**; the 40 s shared-cursor figure is an *arithmetic counterfactual* (`n × delay`), not a measured arm, so ~940× is a ratio against it. The **invariant** is the shape (fast drain in well under a second while the slow peer clears a handful); the drain time itself is host-dependent, so the ratio moves with it (a slower host measured 0.083 s / ~480×). |
 | **Q6** crash (inlined in the Q6 prose)| `bash run_crash_exp.sh`                                 | before-fsync loses **1**, after-persist/after-publish lose **0** (dup collapsed to 0 incidents); recovery 8.8/95/474 ms for 100/1000/5000 entries (host-dependent, and linear in the backlog -- that linearity is the claim). |
