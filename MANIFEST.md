@@ -47,6 +47,7 @@ See `README.md` for run instructions.
 | `REPRODUCIBILITY.md`                | determinism notes: the stable gateway partition, what is seeded, what needs services |
 | `fabric/bench.py`                   | shared MQTT/JetStream latency probe used by `bench_wan.py` inside `Dockerfile.bench` |
 | `fabric/clockskew/{bootstrap_gw1.sh,bootstrap_gw2.sh,measure_skew.py,measure_eps.py,gw_silence.py,run_do_experiment.sh,run_do_clean.sh,run_skew_faketime.sh,Dockerfile.faketime}` | the rest of the two-host clock-skew harness: VM bootstrap, ε/skew measurement, the single-host `libfaketime` variant (see `clockskew/DISTRIBUTED.md`) |
+| `fabric/clockskew/EXPECTED.md`      | the reported two-host skew result (ε sweep + P3.6 soundness), since the harnesses destroy their hosts |
 | `paper/{paper.pdf,paper.tex,references.bib}` | the accepted manuscript and its sources |
 
 ## External dependency (not bundled)

@@ -180,7 +180,8 @@ authenticated `doctl`). Two cheaper harnesses reproduce the same behaviour witho
 account: `two_vm_skew.sh` (two local Lima VMs) and the single-host `libfaketime` variant
 `run_skew_faketime.sh`. Walkthrough for all three: `fabric/clockskew/DISTRIBUTED.md` and
 `fabric/clockskew/README.md`. Expected: ε tracks the injected offset; P3.6 stays sound while
-ε < W = 30 s and flips at 35 s.
+ε < W = 30 s and flips at 35 s — the reported sweep is recorded in
+`fabric/clockskew/EXPECTED.md`, since the harnesses destroy their hosts and leave no artefact.
 
 ---
 

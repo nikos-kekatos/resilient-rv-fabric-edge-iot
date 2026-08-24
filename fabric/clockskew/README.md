@@ -62,7 +62,8 @@ doctl account get            # must already be authenticated
 bash run_do_experiment.sh    # FULL=1 uses s-2vcpu-4gb: MonPoly's opam build OOMs a 1GB box
 ```
 Independent kernels, a real network and genuinely divergent clocks: this is the faithful
-setup for the headline P3.6/P3.7 claim. See `DISTRIBUTED.md` for the full walkthrough.
+setup for the headline P3.6/P3.7 claim. See `DISTRIBUTED.md` for the full walkthrough, and
+`EXPECTED.md` for the reported ε sweep to diff your run against.
 
 ## Reporting
 Put `eps` vs `FT_SPEC` (and the P3.6 margin) in a table/plot, and state that P3.6
