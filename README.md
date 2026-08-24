@@ -32,8 +32,12 @@ run against the real MonPoly and RTLola engines and, where brokers are needed, a
 Mosquitto and NATS JetStream.
 
 **Present as code, but with no recorded output here** — the per-event latency sweep (Q2),
-the throughput and fleet-scale numbers (Q3), the detection run (Q4), the two-host clock-skew
-sweep, and the "independent re-execution" figures. The scripts are included; the results in
+the detection run (Q4), the two-host clock-skew sweep, and the "independent re-execution"
+figures. Q4 is unseeded *by design* (`device_publisher.py` seeds from `os.urandom(16)`), so no
+fixed output exists to record; Q2 needs Linux `netem` (`--cap-add NET_ADMIN`) and the two-host
+skew sweep creates and then destroys two cloud VMs, so neither survives its own run.
+Q3 **does** reproduce and its output is now recorded in `fabric/expected/q3_scale_fleet.md`
+(needs only NATS; absolute rates are host-specific, the saturation/zero-loss shape is not). The scripts are included; the results in
 the paper were measured on hosts and networks this repository cannot recreate, and are
 host-dependent by nature.
 
@@ -154,10 +158,10 @@ docker compose up -d mosquitto nats           # brokers only (for exp_isolation/
 |----------------------|----------------------------------------------------------|-----------------|
 | **Q1** baseline (§7) | `docker compose up -d mosquitto` then `EXP_ROOT="$PWD" python3 exp_baseline.py --n 7000 --rate 500 --trials 5` (and `--rate 3000`). The script generates its own seeded trace into `expdata/`; from inside the compose network add `--broker mosquitto` | **0/7000 loss** on both shared-log and fabric at 500 & 3000 msg/s (the ~1% prior figure does not reproduce). |
 | **Q2** latency (§7)  | `python3 bench_wan.py` + `tc qdisc add dev <if> root netem delay 5ms` | MQTT hop ≈ 3δ (17/32/60 ms at δ=5/10/20 ms); JetStream ≈ δ (7/13/23 ms); p95 < 75 ms. |
-| **Q3** throughput (§7)| `python3 bench_scale.py` ; `python3 bench_fleet.py`     | saturation ~10.7K→14K msg/s at 0 loss; fleets 250/500/1000 devices at 0 loss, ~60 ms p95. |
+| **Q3** throughput (§7)| `docker compose up -d nats` then `python3 bench_scale.py` ; `python3 bench_fleet.py` | saturation ~10.7K→14K msg/s at 0 loss; fleets 250/500/1000 devices at 0 loss, ~60 ms p95. Reproduced on a second host (~10.9K plateau, 0.00% loss at all three fleet sizes) — see `expected/q3_scale_fleet.md`. |
 | **Q5** isolation, G4 (Table 2) | `python3 exp_isolation.py --n 2000 --delay 0.02`| fast consumer **0.043 s ± 0.001** vs slow peer processed **3**; the 40 s shared-cursor figure is an *arithmetic counterfactual* (`n × delay`), not a measured arm, so ~940× is a ratio against it. The **invariant** is the shape (fast drain in well under a second while the slow peer clears a handful); the drain time itself is host-dependent, so the ratio moves with it (a slower host measured 0.083 s / ~480×). |
 | **Q6** crash (inlined in the Q6 prose)| `bash run_crash_exp.sh`                                 | before-fsync loses **1**, after-persist/after-publish lose **0** (dup collapsed to 0 incidents); recovery 8.8/95/474 ms for 100/1000/5000 entries (host-dependent, and linear in the backlog -- that linearity is the claim). |
-| **Q7** overload (§7) | `python3 exp_retention.py --cap 1000`                    | `discard=old` silently drops **1000/2000**; `discard=new` raises **1000** publish errors (loss observable). The two loss counts are exact; the publish ceiling (~10.7K msg/s on the paper's host) is host-dependent and only sets the `T_buffer` horizons. |
+| **Q7** overload (§7) | `python3 exp_retention.py --cap 1000`                    | `discard=old` silently drops **1000/2000**; `discard=new` raises **1000** publish errors (loss observable). The two loss counts are exact and host-independent; the single-producer publish rate this script measures is *not* (10,658 msg/s recorded, 4,141 on another host) and only feeds the `T_buffer = capacity / R_in` horizons. |
 | **Q8** oracle (Table 3)| `python3 exp_oracle.py --md`                           | see §2 above. |
 
 > `run_crash_exp.sh` expects a Docker network `rvexp` with a `nats-exp` JetStream container

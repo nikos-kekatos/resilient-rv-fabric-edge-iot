@@ -40,6 +40,7 @@ See `README.md` for run instructions.
 | `fabric/Dockerfile.{backend,node,bench,rvbase}` | container images (backend `FROM rvhier:latest`) |
 | `fabric/requirements.txt`           | Python deps (`paho-mqtt`, `nats-py`)       |
 | `fabric/expected/EXPERIMENTS_RESULTS.md` | full experiment log / expected numbers |
+| `fabric/expected/q3_scale_fleet.md` | Q3 saturation + fleet output recorded on a second host |
 | `realdata/DOWNLOAD.md`              | dataset download instructions              |
 | `realdata/expected/EPISODES.md`     | firing/episode counts for P3.2 & P3.6, and the command that reproduces them |
 | `REPRODUCIBILITY.md`                | determinism notes: the stable gateway partition, what is seeded, what needs services |

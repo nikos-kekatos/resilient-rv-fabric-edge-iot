@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scaling sweep (Q4): sustained delivered verdict rate and end-to-end p95
+"""Scaling sweep (Q3): sustained delivered verdict rate and end-to-end p95
 latency at increasing offered load (concurrent producers) against one NATS
 JetStream durable consumer, to show the backend's saturation/headroom.
 Env: NATS_URL."""
