@@ -8,7 +8,7 @@ Properties:
 - P3.2: Coordinated Attack Detection (30s window)
 - P3.3: Attack Escalation Pattern (10-60s window)
 - P3.4: Persistent Campaign Detection (1h window)
-- P3.5: RTLola Silent Node Anomaly (5 minutes)
+- P3.5: Silent Node Anomaly (5s window)
 """
 
 import sys
@@ -551,12 +551,32 @@ class OnlineMonPolyMonitor:
                         'property': property_name,
                         'method': 'monpoly_online'
                     })
-
             elif property_name == 'P3.2':
-                # Coordinated attack: CNT aggregation, output = (count)
+                # Coordinated attack: output = (device, count)
                 if not device_matches:
                     return incidents
-                device_count = int(device_matches[0])
+
+                devices = []
+                device_count = None
+                for match in device_matches:
+                    parts = [p.strip() for p in match.split(',')]
+                    if len(parts) == 1:
+                        try:
+                            device_count = int(parts[0])
+                        except ValueError:
+                            pass
+                        continue
+                    # new form: (device,count) or (count,device)
+                    try:
+                        if parts[0].lstrip('-').isdigit():
+                            cnt, dev = int(parts[0]), parts[1]
+                        else:
+                            dev, cnt = parts[0], int(parts[1])
+                    except ValueError:
+                        continue
+                    devices.append(dev)
+                    device_count = cnt
+
                 incident_key = f"coordinated_{timestamp//30}"
                 if self.incidents_emitted[incident_key] == 0:
                     self.incidents_emitted[incident_key] += 1
@@ -564,11 +584,11 @@ class OnlineMonPolyMonitor:
                         'type': 'coordinated_attack',
                         'severity': 'CRITICAL',
                         'device_count': device_count,
+                        'contributing_devices': sorted(set(devices)),  # ⭐ runtime witness
                         'timestamp': timestamp,
                         'property': property_name,
                         'method': 'monpoly_online'
                     })
-
             elif property_name == 'P3.3':
                 # Escalation pattern: ένα incident ανά device
                 for device in device_matches:
@@ -677,6 +697,8 @@ def emit_incident(incident):
 
     if 'device' in incident:
         print(f"    Device: {incident['device']}", flush=True)
+    if 'contributing_devices' in incident:
+        print(f"    Devices: {', '.join(incident['contributing_devices'])}", flush=True)
     if 'device_count' in incident:
         print(f"    Device Count: {incident['device_count']}", flush=True)
 

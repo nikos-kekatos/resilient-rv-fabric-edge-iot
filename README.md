@@ -133,7 +133,9 @@ python3 exp_oracle.py --md
 | −G3 (tick)           | 5/7       | 2      | 2                | 0          |
 | −G4 (isolation)      | 7/7       | 0      | 0                | 0          |
 
-The run also writes `oracle_results.json`; diff it against `fabric/expected/oracle_results.json`.
+The run prints the JSON on stdout (there is no `--out` flag), so redirect it to compare:
+`python3 exp_oracle.py > oracle_results.json` and diff against
+`fabric/expected/oracle_results.json`.
 The campaign is deterministic and seeded (each fault bound to one incident; P3.3 on `d1` is
 the no-fault control) — see the `exp_oracle.py` header for the exact fault→incident bindings.
 
@@ -150,12 +152,12 @@ docker compose up -d mosquitto nats           # brokers only (for exp_isolation/
 
 | Paper element        | Command (in `fabric/`)                                  | Expected result |
 |----------------------|----------------------------------------------------------|-----------------|
-| **Q1** baseline (§7) | `docker compose up -d` then `docker compose exec bench python3 /exp/exp_baseline.py --n 7000 --rate 500` (and `--rate 3000`); natively, set `EXP_ROOT` to a directory holding `expdata/trace.jsonl` | **0/7000 loss** on both shared-log and fabric at 500 & 3000 msg/s (the ~1% prior figure does not reproduce). |
+| **Q1** baseline (§7) | `docker compose up -d mosquitto` then `EXP_ROOT="$PWD" python3 exp_baseline.py --n 7000 --rate 500 --trials 5` (and `--rate 3000`). The script generates its own seeded trace into `expdata/`; from inside the compose network add `--broker mosquitto` | **0/7000 loss** on both shared-log and fabric at 500 & 3000 msg/s (the ~1% prior figure does not reproduce). |
 | **Q2** latency (§7)  | `python3 bench_wan.py` + `tc qdisc add dev <if> root netem delay 5ms` | MQTT hop ≈ 3δ (17/32/60 ms at δ=5/10/20 ms); JetStream ≈ δ (7/13/23 ms); p95 < 75 ms. |
 | **Q3** throughput (§7)| `python3 bench_scale.py` ; `python3 bench_fleet.py`     | saturation ~10.7K→14K msg/s at 0 loss; fleets 250/500/1000 devices at 0 loss, ~60 ms p95. |
-| **Q5** isolation, G4 (Table 2) | `python3 exp_isolation.py --n 2000 --delay 0.02`| fast consumer **0.043 s ± 0.001** vs slow peer processed **3**; the 40 s shared-cursor figure is an *arithmetic counterfactual* (`n × delay`), not a measured arm, so ~940× is a ratio against it. |
-| **Q6** crash (inlined in the Q6 prose)| `bash run_crash_exp.sh`                                 | before-fsync loses **1**, after-persist/after-publish lose **0** (dup collapsed to 0 incidents); recovery 8.8/95/474 ms for 100/1000/5000 entries. |
-| **Q7** overload (§7) | `python3 exp_retention.py --cap 1000`                    | `discard=old` silently drops **1000/2000**; `discard=new` raises **1000** publish errors (loss observable); publish ceiling ~10.7K msg/s. |
+| **Q5** isolation, G4 (Table 2) | `python3 exp_isolation.py --n 2000 --delay 0.02`| fast consumer **0.043 s ± 0.001** vs slow peer processed **3**; the 40 s shared-cursor figure is an *arithmetic counterfactual* (`n × delay`), not a measured arm, so ~940× is a ratio against it. The **invariant** is the shape (fast drain in well under a second while the slow peer clears a handful); the drain time itself is host-dependent, so the ratio moves with it (a slower host measured 0.083 s / ~480×). |
+| **Q6** crash (inlined in the Q6 prose)| `bash run_crash_exp.sh`                                 | before-fsync loses **1**, after-persist/after-publish lose **0** (dup collapsed to 0 incidents); recovery 8.8/95/474 ms for 100/1000/5000 entries (host-dependent, and linear in the backlog -- that linearity is the claim). |
+| **Q7** overload (§7) | `python3 exp_retention.py --cap 1000`                    | `discard=old` silently drops **1000/2000**; `discard=new` raises **1000** publish errors (loss observable). The two loss counts are exact; the publish ceiling (~10.7K msg/s on the paper's host) is host-dependent and only sets the `T_buffer` horizons. |
 | **Q8** oracle (Table 3)| `python3 exp_oracle.py --md`                           | see §2 above. |
 
 > `run_crash_exp.sh` expects a Docker network `rvexp` with a `nats-exp` JetStream container
@@ -190,9 +192,14 @@ python3 ton_iot_monpoly.py --csv ton_iot/Train_Test_Network.csv --gateways 2
 **Expected (as reported in §8):**
 - **WUSTL:** 14 source identities (6 attackers); per-identity detection **precision 0.83 /
   recall 0.83** (recall_struct 1.0), detection driven by `ddos_flood`. Real MonPoly:
-  **P3.2 fires (2 episodes), P3.6 fires (17 episodes)**.
+  **P3.2 fires (1499 firings, 17 episodes)**; **P3.6 is satisfied continuously**
+  (732 firings collapsing to 1 sustained episode -- no gap exceeds 7 s over a 24.9 min span).
 - **TON_IoT:** 11,536 identities (19 attackers); per-identity detection **0.64 / 0.47**
-  (0.64 on structural classes). Real MonPoly: **P3.2 (11 episodes), P3.6 (154 episodes)**.
+  (0.64 on structural classes). Real MonPoly: **P3.2 (27 firings, 11 episodes)**,
+  **P3.6 (522 firings, 168 episodes)**.
+
+Firing and episode counts, and the command that produces them, are in
+`realdata/expected/EPISODES.md`.
 
 Each script writes a `*_report.json`; diff against `realdata/expected/`. (Note: an *episode*
 is consecutive MonPoly satisfaction timepoints collapsed into one incident.)

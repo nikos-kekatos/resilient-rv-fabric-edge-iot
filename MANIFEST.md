@@ -1,7 +1,8 @@
 # MANIFEST — file inventory and paper mapping
 
-Every file in this artifact and what it corresponds to in the paper. See `README.md` for
-run instructions.
+Every file in this artifact and what it corresponds to in the paper (generated outputs --
+`expdata/`, `*_report.json`, `*.log`, `_oracle_work/` -- are not listed; see `.gitignore`).
+See `README.md` for run instructions.
 
 ## Paper element → script
 
@@ -40,6 +41,11 @@ run instructions.
 | `fabric/requirements.txt`           | Python deps (`paho-mqtt`, `nats-py`)       |
 | `fabric/expected/EXPERIMENTS_RESULTS.md` | full experiment log / expected numbers |
 | `realdata/DOWNLOAD.md`              | dataset download instructions              |
+| `realdata/expected/EPISODES.md`     | firing/episode counts for P3.2 & P3.6, and the command that reproduces them |
+| `REPRODUCIBILITY.md`                | determinism notes: the stable gateway partition, what is seeded, what needs services |
+| `fabric/bench.py`                   | shared MQTT/JetStream latency probe used by `bench_wan.py` inside `Dockerfile.bench` |
+| `fabric/clockskew/{bootstrap_gw1.sh,bootstrap_gw2.sh,measure_skew.py,measure_eps.py,gw_silence.py,run_do_experiment.sh,run_do_clean.sh,run_skew_faketime.sh,Dockerfile.faketime}` | the rest of the two-host clock-skew harness: VM bootstrap, ε/skew measurement, the single-host `libfaketime` variant (see `clockskew/DISTRIBUTED.md`) |
+| `paper/{paper.pdf,paper.tex,references.bib}` | the accepted manuscript and its sources |
 
 ## External dependency (not bundled)
 

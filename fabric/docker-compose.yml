@@ -10,7 +10,9 @@
 # campaign), which the single-host prototype cannot express.
 #
 # Prereq (heavy base with the RV engines):
-#   docker build -t rvhier:latest ../../hierarchical-rv-rtlola
+#   git clone https://github.com/nikos-kekatos/hybrid-hierarchical-rv-edge-iot.git
+#   docker build -t rvhier:latest -f fabric/Dockerfile.rvbase \
+#       hybrid-hierarchical-rv-edge-iot/code
 # Then:
 #   docker compose up --build
 services:

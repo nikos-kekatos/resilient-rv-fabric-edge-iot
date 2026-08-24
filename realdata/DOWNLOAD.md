@@ -1,4 +1,4 @@
-# Datasets for §7 (Real-Data Validation)
+# Datasets for §8 (Real-Data Validation)
 
 The two datasets are **not bundled** (size + licensing). Download them into the
 sub-folders below, then run the scripts as in the top-level `README.md` §4.

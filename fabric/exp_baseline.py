@@ -35,6 +35,7 @@ GENS = [dp.gen_safe_tx, dp.gen_overflow_attack, dp.gen_time_spoof_attack,
 
 
 def gen_trace(n, k, seed=1234):
+    os.makedirs(os.path.dirname(TRACE), exist_ok=True)
     rnd = random.Random(seed)
     evts = []
     for i in range(n):
@@ -147,5 +148,7 @@ if __name__ == "__main__":
     ap.add_argument("--k", type=int, default=8)
     ap.add_argument("--rate", type=float, default=500.0, help="aggregate msg/s")
     ap.add_argument("--trials", type=int, default=5)
-    ap.add_argument("--broker", default="mosq-exp")
+    ap.add_argument("--broker", default="localhost",
+                    help="MQTT host: localhost against 'docker compose up -d mosquitto' "
+                         "(port 1883 published), or 'mosquitto' from inside the compose network")
     main(ap.parse_args())

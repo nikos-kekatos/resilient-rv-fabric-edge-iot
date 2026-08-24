@@ -112,7 +112,8 @@ and watch P3.7 (gateway silence) fire on the backend while the tick keeps pulsin
 FULL P3.6/P3.7 firing (adds MonPoly)
 ================================================================================
 On the broker host, instead of just nats/mosquitto, run the backend in Docker:
-    docker build -t rvhier:latest ../../../hierarchical-rv-rtlola   # once (heavy)
+    docker build -t rvhier:latest -f Dockerfile.rvbase \
+        <clone of hybrid-hierarchical-rv-edge-iot>/code    # once (heavy)
     docker run --rm --network host -e NATS_URL=nats://127.0.0.1:4222 \
       -v "$PWD/..":/exp -w /exp $(docker build -q -f Dockerfile.backend ..) python3 backend_l3.py
 Then P3.6 (overflow on ≥2 gateways within 30s) and P3.7 (a gateway gone dark) fire

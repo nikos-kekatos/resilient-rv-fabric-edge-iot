@@ -1,12 +1,18 @@
-# Backend (L3): reuses the prototype image, which already has the MonPoly + RTLola
-# binaries, correlator_monitor.py, and the specs under /app (monpoly_specs, rtlola_specs).
+# Backend (L3): reuses the prototype image for the MonPoly + RTLola *binaries*.
+# correlator_monitor.py and the specs are copied in from this directory below, so
+# the backend does not depend on what the base image happens to carry.
 #
 # Build the base first (heavy: builds MonPoly via opam + RTLola via cargo):
-#   docker build -t rvhier:latest ../../hierarchical-rv-rtlola
+#   git clone https://github.com/nikos-kekatos/hybrid-hierarchical-rv-edge-iot.git
+#   docker build -t rvhier:latest -f fabric/Dockerfile.rvbase \
+#       hybrid-hierarchical-rv-edge-iot/code
 # Then `docker compose build` picks up this Dockerfile.
 FROM rvhier:latest
 RUN pip install --no-cache-dir nats-py paho-mqtt
 COPY backend_l3.py /app/backend_l3.py
+# correlator_monitor.py is vendored in this directory so the backend does not
+# depend on the base image happening to carry it (backend_l3.py imports it).
+COPY correlator_monitor.py /app/correlator_monitor.py
 COPY crossgw_specs /app/crossgw_specs
 COPY monpoly_specs /app/monpoly_specs
 COPY rtlola_specs  /app/rtlola_specs
