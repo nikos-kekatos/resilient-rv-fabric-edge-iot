@@ -278,9 +278,9 @@ def to_rtlola(v):
     """Time-triggered silent-node property P3.5 (verdicts + ticks).
 
     Two message shapes arrive on this callback (verdicts and fleet.tick share it):
-      - verdict/alert dict (has type+device): forward overflow/safe_tx into the
-        RTLola CSV stream via process_alert (other types are ignored by RTLola),
-        emitting any incidents it returns.
+      - verdict/alert dict (has type+device): forward the verdict into the RTLola
+        CSV stream via process_alert (any of the specification's declared input
+        streams counts as "still reporting"), emitting any incidents it returns.
       - fleet.tick (``{"ts_us": ...}``, no type/device): a clock pulse. Under total
         silence no verdict arrives, so we drain the incidents that RTLola's own
         @Local(0.2Hz) deadline produced (get_pending_incidents). This is what makes

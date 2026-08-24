@@ -31,13 +31,17 @@ validation (§8: identity counts, precision/recall, and the P3.2/P3.6 episode co
 run against the real MonPoly and RTLola engines and, where brokers are needed, against real
 Mosquitto and NATS JetStream.
 
-**Present as code, but with no recorded output here** — the per-event latency sweep (Q2),
-the detection run (Q4), the two-host clock-skew sweep, and the "independent re-execution"
-figures. Q4 is unseeded *by design* (`device_publisher.py` seeds from `os.urandom(16)`), so no
-fixed output exists to record; Q2 needs Linux `netem` (`--cap-add NET_ADMIN`) and the two-host
-skew sweep creates and then destroys two cloud VMs, so neither survives its own run.
-Q3 **does** reproduce and its output is now recorded in `fabric/expected/q3_scale_fleet.md`
-(needs only NATS; absolute rates are host-specific, the saturation/zero-loss shape is not). The scripts are included; the results in
+**Present as code, but with no recorded output here** — the per-event latency sweep (Q2), the
+two-host clock-skew sweep, and the "independent re-execution" figures. Q2 needs Linux `netem`
+(`--cap-add NET_ADMIN`); the skew sweep creates and then destroys two cloud VMs, so the
+infrastructure does not survive its own run (a single-host `libfaketime` variant,
+`clockskew/run_skew_faketime.sh`, needs no cloud).
+
+Two of these have since been recorded, on a *different* host than the paper:
+`fabric/expected/q3_scale_fleet.md` (Q3 saturation and fleet sweep, needs only NATS) and
+`fabric/expected/q4_fullstack_g2.md` (Q4 detection through the real engines plus the Table 2
+G2 order-violation counter). Q4 is unseeded *by design* — `device_publisher.py` seeds from
+`os.urandom(16)` — so that file is one sample to compare in shape, not a golden file. The scripts are included; the results in
 the paper were measured on hosts and networks this repository cannot recreate, and are
 host-dependent by nature.
 

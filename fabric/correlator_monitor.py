@@ -57,6 +57,11 @@ class OnlineRTLolaMonitor:
 
         threading.Thread(target=self._dispatch_loop, daemon=True).start()
 
+    # Column order of the CSV fed to rtlola-cli. P3.5 treats ANY verdict as
+    # "still reporting", so every input stream the specification declares must
+    # appear here, in the same order.
+    RTLOLA_STREAMS = ("overflow", "safe_tx", "time_anomaly", "fuzzing")
+
     def _spawn_monitor(self):
         """Initiates a unique RTLola process in online mode."""
         try:
@@ -69,8 +74,10 @@ class OnlineRTLolaMonitor:
                 bufsize=1
             )
             
-            # Send CSV header first (is required from rtlola-cli)
-            self.process.stdin.write("overflow,safe_tx\n")
+            # Send CSV header first (is required from rtlola-cli). rtlola-cli
+            # rejects the spec unless the header names EVERY declared input
+            # stream, so this must stay in step with silent_node.lola.
+            self.process.stdin.write(",".join(self.RTLOLA_STREAMS) + "\n")
             self.process.stdin.flush()
             
             self.start_time = time.time()
@@ -178,12 +185,12 @@ class OnlineRTLolaMonitor:
         alert_type = alert['type']
         event_timestamp = float(alert['timestamp'])
 
-        if alert_type in ["overflow", "safe_tx"]:
+        if alert_type in self.RTLOLA_STREAMS:
             if self.process and self.process.poll() is None:
-                if alert_type == "overflow":
-                    csv_line = f"{device},#\n"
-                else:
-                    csv_line = f"#,{device}\n"
+                # the emitting device goes in its own stream's column, "#" (no value)
+                # in the others, so a verdict of any kind counts as "still reporting"
+                cells = [device if s == alert_type else "#" for s in self.RTLOLA_STREAMS]
+                csv_line = ",".join(cells) + "\n"
         
                 try:
                     self.process.stdin.write(csv_line)

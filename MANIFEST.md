@@ -41,6 +41,7 @@ See `README.md` for run instructions.
 | `fabric/requirements.txt`           | Python deps (`paho-mqtt`, `nats-py`)       |
 | `fabric/expected/EXPERIMENTS_RESULTS.md` | full experiment log / expected numbers |
 | `fabric/expected/q3_scale_fleet.md` | Q3 saturation + fleet output recorded on a second host |
+| `fabric/expected/q4_fullstack_g2.md` | Q4 full-stack detection + the Table 2 G2 order-violation counter |
 | `realdata/DOWNLOAD.md`              | dataset download instructions              |
 | `realdata/expected/EPISODES.md`     | firing/episode counts for P3.2 & P3.6, and the command that reproduces them |
 | `REPRODUCIBILITY.md`                | determinism notes: the stable gateway partition, what is seeded, what needs services |
