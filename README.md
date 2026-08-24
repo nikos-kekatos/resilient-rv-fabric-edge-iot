@@ -173,10 +173,14 @@ docker compose up -d mosquitto nats           # brokers only (for exp_isolation/
 > script header documents the K=50 / crash-at-#25 setup.
 
 ### Two-host clock-skew of P3.6 (§7, Q4)
-The cross-gateway P3.6 skew result is measured across **two independent hosts**. See
-`fabric/clockskew/DISTRIBUTED.md` and `fabric/clockskew/two_vm_skew.sh`. A single-host
-`libfaketime` variant (`run_skew_faketime.sh`) gives the same result. Expected: ε tracks the
-injected offset; P3.6 stays sound while ε < W = 30 s and flips at 35 s.
+The cross-gateway P3.6 skew result is measured across **two separate cloud VMs** — independent
+kernel clocks, a real network, NTP disabled on gw2 — by
+`fabric/clockskew/run_do_experiment.sh` (two DigitalOcean droplets, destroyed on exit; needs an
+authenticated `doctl`). Two cheaper harnesses reproduce the same behaviour without a cloud
+account: `two_vm_skew.sh` (two local Lima VMs) and the single-host `libfaketime` variant
+`run_skew_faketime.sh`. Walkthrough for all three: `fabric/clockskew/DISTRIBUTED.md` and
+`fabric/clockskew/README.md`. Expected: ε tracks the injected offset; P3.6 stays sound while
+ε < W = 30 s and flips at 35 s.
 
 ---
 
